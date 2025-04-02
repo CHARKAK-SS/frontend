@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:charkak/screens/register_screen.dart';
+import 'mainpage_screen.dart'; // MainPageScreen 추가
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,6 +11,23 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  void _handleLogin() {
+    // 로그인 검증 (임시로 성공 처리)
+    final id = _idController.text;
+    final pw = _passwordController.text;
+
+    if (id.isNotEmpty && pw.isNotEmpty) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainPageScreen()), // 로그인 후 이동
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('아이디와 비밀번호를 입력하세요')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +47,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _idController,
                 decoration: InputDecoration(
                   hintText: '아이디를 입력하세요',
-                  hintStyle: TextStyle(
-                    fontFamily: 'PretendardRegular',
-                    fontSize: 15,
-                  ),
                   contentPadding: const EdgeInsets.symmetric(
                     vertical: 16.0,
                     horizontal: 20.0,
@@ -42,38 +55,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(30.0),
                     borderSide: const BorderSide(
                       color: Colors.black,
-                      width: 2.5,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                    borderSide: const BorderSide(
-                      color: Colors.black,
-                      width: 2.5,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                    borderSide: const BorderSide(
-                      color: Colors.black,
-                      width: 2.5,
+                      width: 3.0,
                     ),
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
 
               // 비밀번호 입력
               TextField(
                 controller: _passwordController,
-                obscureText: true,
                 decoration: InputDecoration(
                   hintText: '비밀번호를 입력하세요',
-                  hintStyle: TextStyle(
-                    fontFamily: 'PretendardRegular',
-                    fontSize: 15,
-                  ),
                   contentPadding: const EdgeInsets.symmetric(
                     vertical: 16.0,
                     horizontal: 20.0,
@@ -82,52 +75,38 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(30.0),
                     borderSide: const BorderSide(
                       color: Colors.black,
-                      width: 2.5,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                    borderSide: const BorderSide(
-                      color: Colors.black,
-                      width: 2.5,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                    borderSide: const BorderSide(
-                      color: Colors.black,
-                      width: 2.5,
+                      width: 3.0,
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
 
-              // ✅ 로그인 버튼 추가
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: 로그인 처리
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+              // 로그인 버튼
+              ElevatedButton(
+                onPressed: _handleLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  child: const Text(
-                    '로그인',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontFamily: 'PretendardBold',
-                    ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16.0,
+                  ), // 내부 여백 조정
+                  minimumSize: const Size(
+                    150,
+                    50,
+                  ), // 버튼 최소 크기 설정 (너비 200, 높이 50)
+                ),
+                child: const Text(
+                  '로그인',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontFamily: 'PretendardBold',
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
 
               // 회원가입 텍스트
@@ -135,19 +114,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RegisterScreen(),
-                      ),
-                    );
+                    // 회원가입 페이지로 이동
+                    // Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen()));
                   },
                   child: const Text(
                     '회원가입 >',
                     style: TextStyle(
                       color: Colors.black,
                       fontSize: 15,
-                      fontFamily: 'pretendardBold',
+                      fontFamily: 'PretendardBold',
                     ),
                   ),
                 ),
