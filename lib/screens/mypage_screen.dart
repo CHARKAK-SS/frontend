@@ -22,6 +22,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
     '2025-04-02': {'image': 'assets/samples/photo1.jpg'},
     '2025-04-08': {'image': 'assets/samples/photo2.jpg'},
     '2025-04-13': {'image': 'assets/samples/photo3.jpg'},
+    '2025-04-18': {'image': 'assets/samples/photo7.jpg'},
     '2025-04-21': {'image': 'assets/samples/photo4.jpg'},
     '2025-04-26': {
       'image': 'assets/samples/photo5.jpg',
@@ -43,6 +44,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
             const SizedBox(height: 10),
             _buildMonthHeader(),
             const SizedBox(height: 10),
+            _buildWeekDays(),
             Expanded(child: _buildCalendar()),
           ],
         ),
@@ -204,6 +206,21 @@ class _MYpageScreenState extends State<MYpageScreen> {
     );
   }
 
+  Widget _buildWeekDays() {
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: days.map((d) => Expanded(
+          child: Center(
+            child: Text(d, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        )).toList(),
+      ),
+    );
+  }
+
   Widget _buildCalendar() {
     final firstDayOfMonth = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
     final lastDayOfMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0);
@@ -215,9 +232,9 @@ class _MYpageScreenState extends State<MYpageScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        crossAxisSpacing: 4,
-        mainAxisSpacing: 4,
-        childAspectRatio: 0.6, //캘린더 세로 비율
+        crossAxisSpacing: 2,
+        mainAxisSpacing: 2,
+        childAspectRatio: 0.5, //photo size(smaller is bigger)
       ),
       itemCount: totalCells,
       itemBuilder: (context, index) {
@@ -232,6 +249,9 @@ class _MYpageScreenState extends State<MYpageScreen> {
         return GestureDetector(
           onTap: () => _onDayTap(context, date, data),
           child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300,width: 0.1), //calender gird
+            ),
             padding: const EdgeInsets.all(2),
             child: Column(
               children: [
@@ -240,7 +260,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                   Expanded(
                     child: Image.asset(
                       data['image'],
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
                       filterQuality: FilterQuality.low,
                     ),
                   )
@@ -263,15 +283,17 @@ class _MYpageScreenState extends State<MYpageScreen> {
   void _onDayTap(BuildContext context, DateTime date, dynamic data) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        if (data != null && data['image'] != null) { //기록이 있을 때
-          return SingleChildScrollView(
+        if (data != null && data['image'] != null) {
+          return FractionallySizedBox(
+            heightFactor: 0.7,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 128),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -293,15 +315,21 @@ class _MYpageScreenState extends State<MYpageScreen> {
                   const Divider(height: 20),
                   Center(child: Image.asset(data['image'], height: 300)),
                   const Divider(height: 20),
-                  Text(data['content'] ?? '일기 내용이 없습니다.', style: const TextStyle(fontSize: 14)),
-                  const SizedBox(height: 20,)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Text(
+                        data['content'] ?? '일기 내용이 없습니다.',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           );
-        } else { //기록이 없을 때
+        } else {
           return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 64, 16, 64), //여백
+            padding: const EdgeInsets.fromLTRB(16, 64, 16, 64),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
