@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'spotsearch_screen.dart'; // SpotSearchScreen 추가
+import 'mypage_screen.dart';
 
 class MainPageScreen extends StatefulWidget {
   const MainPageScreen({super.key});
@@ -62,6 +63,11 @@ class _MainPageScreenState extends State<MainPageScreen> {
                 MaterialPageRoute(
                   builder: (context) => const SpotSearchScreen(),
                 ),
+              );
+            } else if (_selectedIndex == 2) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const MYpageScreen()),
               );
             }
           });
