@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'spotsearch_screen.dart'; // SpotSearchScreen 추가
 import 'postdetail_screen.dart';
 import 'mypage_screen.dart';
+import 'post_screen.dart'; // PostWriteScreen을 위한 import 추가
 
 class MainPageScreen extends StatefulWidget {
   const MainPageScreen({super.key});
@@ -26,31 +27,57 @@ class _MainPageScreenState extends State<MainPageScreen> {
     'assets/samples/photo10.jpg',
     'assets/samples/photo11.jpg',
     'assets/samples/photo12.jpg',
-    
   ];
-
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    const horizontalPadding = 20.0;
+    const spacing = 0.0; // 여백을 0으로 설정
+    final totalSpacing = spacing * 2;
+    final availableWidth = screenWidth - (horizontalPadding * 2) - totalSpacing;
+    final imageWidth = availableWidth / 3; // 3개의 이미지를 균등하게 나누기
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: Center(
-          child: Image.asset(
-            'assets/icons/camera_w.png',
-            width: 30,
-            height: 30,
-          ),
-        ),
         elevation: 0,
+        // flexibleSpace를 사용하여 로고를 중앙에 배치하고 + 버튼은 오른쪽에 위치시킴
+        flexibleSpace: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset('assets/icons/camera_w.png', width: 35, height: 200),
+          ],
+        ),
+        actions: [
+          // + 버튼을 오른쪽에 추가하고 버튼 크기를 키움
+          IconButton(
+            icon: const Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 30,
+            ), // + 버튼 크기 증가
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) =>
+                          const PostWriteScreen(), // PostWriteScreen으로 이동
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: GridView.builder(
         padding: EdgeInsets.zero,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          crossAxisSpacing: 2,
-          mainAxisSpacing: 2,
+          crossAxisSpacing: spacing, // 여백을 0으로 설정
+          mainAxisSpacing: spacing, // 여백을 0으로 설정
+          mainAxisExtent: 205, // 고정된 세로 크기
         ),
         itemCount: _images.length,
         itemBuilder: (context, index) {
@@ -59,15 +86,18 @@ class _MainPageScreenState extends State<MainPageScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PostDetailScreen(
-                    imagePath: _images[index],
-                  ),
+                  builder:
+                      (context) => PostDetailScreen(imagePath: _images[index]),
                 ),
               );
             },
-            child: Image.asset(
-              _images[index],
-              fit: BoxFit.contain,
+            child: Container(
+              width: imageWidth,
+              color: Colors.white, // 빈 공간을 흰 배경으로 채우기
+              child: Image.asset(
+                _images[index],
+                fit: BoxFit.contain, // 원본 비율을 유지
+              ),
             ),
           );
         },
