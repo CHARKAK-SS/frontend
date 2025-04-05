@@ -14,20 +14,21 @@ class MainPageScreen extends StatefulWidget {
 class _MainPageScreenState extends State<MainPageScreen> {
   int _selectedIndex = 0;
 
-  final List<String> _images = [
-    'assets/samples/photo1.jpg',
-    'assets/samples/photo2.jpg',
-    'assets/samples/photo3.jpg',
-    'assets/samples/photo4.jpg',
-    'assets/samples/photo5.jpg',
-    'assets/samples/photo6.jpg',
-    'assets/samples/photo7.jpg',
-    'assets/samples/photo8.jpg',
-    'assets/samples/photo9.jpg',
-    'assets/samples/photo10.jpg',
-    'assets/samples/photo11.jpg',
-    'assets/samples/photo12.jpg',
+  final List<Map<String, dynamic>> _images = [
+    { 'postid': 1, 'image': 'assets/samples/photo1.jpg' },
+    { 'postid': 2, 'image': 'assets/samples/photo2.jpg' },
+    { 'postid': 3, 'image': 'assets/samples/photo3.jpg' },
+    { 'postid': 4, 'image': 'assets/samples/photo4.jpg' },
+    { 'postid': 5, 'image': 'assets/samples/photo5.jpg' },
+    { 'postid': 6, 'image': 'assets/samples/photo6.jpg' },
+    { 'postid': 7, 'image': 'assets/samples/photo7.jpg' },
+    { 'postid': 8, 'image': 'assets/samples/photo8.jpg' },
+    { 'postid': 9, 'image': 'assets/samples/photo9.jpg' },
+    { 'postid': 10, 'image': 'assets/samples/photo10.jpg' },
+    { 'postid': 11, 'image': 'assets/samples/photo11.jpg' },
+    { 'postid': 12, 'image': 'assets/samples/photo12.jpg' },
   ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -81,13 +82,17 @@ class _MainPageScreenState extends State<MainPageScreen> {
         ),
         itemCount: _images.length,
         itemBuilder: (context, index) {
+          final post = _images[index];
           return GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder:
-                      (context) => PostDetailScreen(imagePath: _images[index]),
+                      (context) => PostDetailScreen(
+                        postid: post['postid'],
+                        imagePath: post['image'],
+                      ),
                 ),
               );
             },
@@ -95,7 +100,7 @@ class _MainPageScreenState extends State<MainPageScreen> {
               width: imageWidth,
               color: Colors.white, // 빈 공간을 흰 배경으로 채우기
               child: Image.asset(
-                _images[index],
+                post['image'],
                 fit: BoxFit.contain, // 원본 비율을 유지
               ),
             ),
