@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'mainpage_screen.dart'; // MainPageScreen 추가
 import 'mypage_screen.dart';
+import 'spotdetail_screen.dart'; // SpotDetailScreen 추가
 
 class SpotSearchScreen extends StatefulWidget {
   const SpotSearchScreen({super.key});
@@ -108,6 +109,7 @@ class _SpotSearchScreenState extends State<SpotSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -174,6 +176,17 @@ class _SpotSearchScreenState extends State<SpotSearchScreen> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(place['address']!),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => SpotDetailScreen(
+                                  placeName: place['name']!, // ✅ 장소 이름 전달
+                                ),
+                          ),
+                        );
+                      },
                     );
                   }).toList(),
 
@@ -234,7 +247,7 @@ class _SpotSearchScreenState extends State<SpotSearchScreen> {
                   builder: (context) => const SpotSearchScreen(),
                 ),
               );
-            }else if (_selectedIndex == 2) {
+            } else if (_selectedIndex == 2) {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const MYpageScreen()),
