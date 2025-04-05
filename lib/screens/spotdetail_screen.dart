@@ -1,4 +1,21 @@
 import 'package:flutter/material.dart';
+import 'postdetail_screen.dart';
+
+  final List<Map<String, dynamic>> _images = [
+    { 'postid': 1, 'image': 'assets/samples/photo1.jpg' },
+    { 'postid': 2, 'image': 'assets/samples/photo2.jpg' },
+    { 'postid': 3, 'image': 'assets/samples/photo3.jpg' },
+    { 'postid': 4, 'image': 'assets/samples/photo4.jpg' },
+    { 'postid': 5, 'image': 'assets/samples/photo5.jpg' },
+    { 'postid': 6, 'image': 'assets/samples/photo6.jpg' },
+    { 'postid': 7, 'image': 'assets/samples/photo7.jpg' },
+    { 'postid': 8, 'image': 'assets/samples/photo8.jpg' },
+    { 'postid': 9, 'image': 'assets/samples/photo9.jpg' },
+    { 'postid': 10, 'image': 'assets/samples/photo10.jpg' },
+    { 'postid': 11, 'image': 'assets/samples/photo11.jpg' },
+    { 'postid': 12, 'image': 'assets/samples/photo12.jpg' },
+  ];
+
 
 class SpotDetailScreen extends StatefulWidget {
   final String placeName;
@@ -13,19 +30,12 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
   final List<String> allTags = ['#평가', '#동물', '#건축물'];
   Set<String> selectedTags = {'#평가', '#동물', '#건축물'};
 
-  final List<String> allImages = [
-    'assets/samples/photo1.jpg',
-    'assets/samples/photo2.jpg',
-    'assets/samples/photo3.jpg',
-    'assets/samples/photo4.jpg',
-    'assets/samples/photo5.jpg',
-    'assets/samples/photo6.jpg',
-    'assets/samples/photo7.jpg',
-  ];
+
 
   @override
   Widget build(BuildContext context) {
-    final List<String> top3Images = allImages.take(3).toList();
+    final List<Map<String, dynamic>> top3Images = _images.take(3).toList();
+
     final screenWidth = MediaQuery.of(context).size.width;
     const horizontalPadding = 20.0;
     const spacing = 4.0;
@@ -150,16 +160,27 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
               const SizedBox(height: 16),
               Row(
                 children: List.generate(3, (index) {
+                  final post = top3Images[index];
                   return Padding(
                     padding: EdgeInsets.only(right: index != 2 ? spacing : 0),
                     child: SizedBox(
                       width: imageWidth,
                       height: imageWidth * (3 / 2),
-                      child: Container(
-                        color: Colors.white,
-                        child: Image.asset(
-                          top3Images[index],
-                          fit: BoxFit.contain,
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PostDetailScreen(
+                                postid: post['postid'],
+                                imagePath: post['image'],
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          color: Colors.white,
+                          child: Image.asset(post['image'], fit: BoxFit.contain),
                         ),
                       ),
                     ),
@@ -273,7 +294,6 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
       },
     );
   }
-
   void _showAllPhotosBottomSheet(BuildContext context, double imageWidth) {
     showModalBottomSheet(
       backgroundColor: Colors.transparent,
@@ -305,22 +325,36 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: allImages.length,
+                itemCount: _images.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
-                  crossAxisSpacing: 1, // ✅ 간격 줄이기
+                  crossAxisSpacing: 1,
                   mainAxisSpacing: 1,
-                  mainAxisExtent: 180, // ✅ 고정된 높이로 설정
+                  mainAxisExtent: 180,
                 ),
                 itemBuilder: (context, index) {
-                  return Container(
-                    color: Colors.white, // ✅ 비어있는 영역을 흰색으로
-                    alignment: Alignment.center,
-                    child: Image.asset(
-                      allImages[index],
-                      fit: BoxFit.contain, // ✅ 원본 비율 유지
-                      width: double.infinity,
-                      height: double.infinity,
+                  final post = _images[index];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PostDetailScreen(
+                            postid: post['postid'],
+                            imagePath: post['image'],
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      color: Colors.white,
+                      alignment: Alignment.center,
+                      child: Image.asset(
+                        post['image'],
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
                     ),
                   );
                 },
