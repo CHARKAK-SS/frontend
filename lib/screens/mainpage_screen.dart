@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'spotsearch_screen.dart'; // SpotSearchScreen 추가
+import 'postdetail_screen.dart';
 import 'mypage_screen.dart';
 
 class MainPageScreen extends StatefulWidget {
@@ -13,22 +14,21 @@ class _MainPageScreenState extends State<MainPageScreen> {
   int _selectedIndex = 0;
 
   final List<String> _images = [
-    'assets/icons/photo1.jpg',
-    'assets/icons/photo2.jpg',
-    'assets/icons/photo3.jpg',
-    'assets/icons/photo4.jpg',
-    'assets/icons/photo5.jpg',
-    'assets/icons/photo6.jpg',
-    'assets/icons/photo7.jpg',
-    'assets/icons/photo8.jpg',
-    'assets/icons/photo9.jpg',
+    'assets/samples/photo1.jpg',
+    'assets/samples/photo2.jpg',
+    'assets/samples/photo3.jpg',
+    'assets/samples/photo4.jpg',
+    'assets/samples/photo5.jpg',
+    'assets/samples/photo6.jpg',
+    'assets/samples/photo7.jpg',
+    'assets/samples/photo8.jpg',
+    'assets/samples/photo9.jpg',
+    'assets/samples/photo10.jpg',
+    'assets/samples/photo11.jpg',
+    'assets/samples/photo12.jpg',
+    
   ];
 
-  final List<Widget> _pages = [
-    const Center(child: Text('홈 페이지')),
-    const SpotSearchScreen(),
-    const Center(child: Text('마이페이지')),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +45,33 @@ class _MainPageScreenState extends State<MainPageScreen> {
         ),
         elevation: 0,
       ),
-      body: _pages[_selectedIndex],
+      body: GridView.builder(
+        padding: EdgeInsets.zero,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 2,
+          mainAxisSpacing: 2,
+        ),
+        itemCount: _images.length,
+        itemBuilder: (context, index) {
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PostDetailScreen(
+                    imagePath: _images[index],
+                  ),
+                ),
+              );
+            },
+            child: Image.asset(
+              _images[index],
+              fit: BoxFit.contain,
+            ),
+          );
+        },
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
