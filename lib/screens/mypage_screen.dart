@@ -16,6 +16,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
   int _selectedIndex = 2;
   DateTime _focusedMonth = DateTime.now();
   String _username = '찰칵';
+  final String _userId = 'charkac';
   File? _profileImage;
 
   final Map<String, dynamic> _calendarData = {
@@ -123,14 +124,14 @@ class _MYpageScreenState extends State<MYpageScreen> {
             children: [
               Row(
                 children: [
-                  Text(_username, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(_username, style: const TextStyle(fontSize: 25, fontFamily: 'PretendardBold')),
                   IconButton(
                     icon: const Icon(Icons.edit, size: 18),
                     onPressed: _showEditNameDialog,
                   ),
                 ],
               ),
-              const Text('@charkac', style: TextStyle(color: Colors.grey)),
+              Text('@$_userId', style: const TextStyle(color: Colors.grey, fontFamily: 'PretendardRegular')),
             ],
           ),
         ],
@@ -153,15 +154,21 @@ class _MYpageScreenState extends State<MYpageScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('닉네임 수정'),
+        backgroundColor: Colors.white,
+        title: const Text('닉네임 수정', style: TextStyle(fontSize: 20, fontFamily: 'PretendardBold')),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(hintText: '새 닉네임 입력'),
         ),
+        actionsAlignment: MainAxisAlignment.center,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('취소', style: TextStyle(fontFamily: 'PretendardSemiBold')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -170,7 +177,11 @@ class _MYpageScreenState extends State<MYpageScreen> {
               });
               Navigator.pop(context);
             },
-            child: const Text('저장'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('저장', style: TextStyle(fontFamily: 'PretendardSemiBold')),
           ),
         ],
       ),
@@ -255,7 +266,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
             padding: const EdgeInsets.all(2),
             child: Column(
               children: [
-                Text(day.toString()),
+                Text(day.toString(), style: TextStyle(fontFamily: 'PretendardSemiBold')),
                 if (data != null && data['image'] != null)
                   Expanded(
                     child: Image.asset(
@@ -268,7 +279,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                   Expanded(
                     child: Text(
                       data['text'],
-                      style: const TextStyle(fontSize: 10),
+                      style: const TextStyle(fontSize: 13, fontFamily: "PretendardRegular"),
                       textAlign: TextAlign.center,
                     ),
                   )
@@ -279,6 +290,208 @@ class _MYpageScreenState extends State<MYpageScreen> {
       },
     );
   }
+
+void _scheduleWrite(BuildContext context) {
+  final TextEditingController locationController = TextEditingController();
+  DateTime today = DateTime.now();
+
+  showModalBottomSheet(
+    isScrollControlled: true,
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          top: 20,
+          left: 16,
+          right: 16,
+        ),
+        child: FractionallySizedBox(
+          heightFactor: 0.2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 날짜 표시
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat.yMMMMd('ko_KR').format(today),
+                    style: const TextStyle(fontSize: 16, fontFamily: 'PretendardSemiBold'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // 장소 입력
+              Row(
+                children: [
+                  const Icon(Icons.location_on),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: locationController,
+                      decoration: const InputDecoration(
+                        hintText: "출사 장소를 입력하세요",
+                        border: UnderlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const Spacer(),
+
+              // 저장 버튼
+              Align(
+                alignment: Alignment.center,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // 저장 로직 여기에 추가
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("저장", style: TextStyle(fontFamily: 'PretendardSemiBold')),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+void _diaryWrite(BuildContext context, DateTime selectedDate) {
+  File? selectedImage;
+  final TextEditingController contentController = TextEditingController();
+  final TextEditingController locationController = TextEditingController();
+
+  showModalBottomSheet(
+    isScrollControlled: true,
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 30,
+          top: 20,
+          left: 16,
+          right: 16,
+        ),
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            return FractionallySizedBox(
+              heightFactor: 0.65,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 날짜
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat.yMMMMd('ko_KR').format(selectedDate),
+                        style: const TextStyle(fontSize: 16, fontFamily: 'PretendardSemiBold'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 장소 입력
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: locationController,
+                          decoration: const InputDecoration(
+                            hintText: "출사 장소를 입력하세요",
+                            border: UnderlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const Divider(height: 20),
+
+                  // 사진 업로드
+                  GestureDetector(
+                    onTap: () async {
+                      final picker = ImagePicker();
+                      final picked = await picker.pickImage(source: ImageSource.gallery);
+                      if (picked != null) {
+                        setState(() {
+                          selectedImage = File(picked.path);
+                        });
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 200,
+                      color: Colors.grey.shade200,
+                      child: selectedImage != null
+                          ? Image.file(selectedImage!, fit: BoxFit.cover)
+                          : const Center(child: Text("사진을 선택하세요")),
+                    ),
+                  ),
+
+                  const Divider(height: 20),
+
+                  // 일기 작성
+                  TextField(
+                      controller: contentController,
+                      maxLines: 5,
+                      decoration: const InputDecoration(
+                        hintText: "일기를 입력하세요",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+
+                  const SizedBox(height: 16),
+
+                  // 저장 버튼
+                  Align(
+                    alignment: Alignment.center,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // 저장 로직 여기에
+                        Navigator.pop(context);
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text("저장", style: TextStyle(fontFamily: 'PretendardSemiBold')),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+    },
+  );
+}
+
+
 
   void _onDayTap(BuildContext context, DateTime date, dynamic data) {
     showModalBottomSheet(
@@ -301,7 +514,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     children: [
                       const Icon(Icons.calendar_today),
                       const SizedBox(width: 8),
-                      Text(DateFormat.yMMMMd('ko_KR').format(date)),
+                      Text(DateFormat.yMMMMd('ko_KR').format(date), style: TextStyle(fontFamily: 'PretendardSemiBold')),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -309,7 +522,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     children: [
                       const Icon(Icons.location_on),
                       const SizedBox(width: 8),
-                      Text(data['title'] ?? '출사 장소')
+                      Text(data['title'] ?? '출사 장소', style: TextStyle(fontFamily: 'PretendardSemiBold'))
                     ],
                   ),
                   const Divider(height: 20),
@@ -319,7 +532,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     child: SingleChildScrollView(
                       child: Text(
                         data['content'] ?? '일기 내용이 없습니다.',
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(fontSize: 14, fontFamily: 'PretendardSemiBold'),
                       ),
                     ),
                   ),
@@ -334,20 +547,23 @@ class _MYpageScreenState extends State<MYpageScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    _scheduleWrite(context);
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('일정 등록'),
+                  child: const Text('일정 등록', style: TextStyle(fontFamily: 'PretendardSemiBold')),
                 ),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => _diaryWrite(context,date),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('일기 작성'),
+                  child: const Text('일기 작성', style: TextStyle(fontFamily: 'PretendardSemiBold')),
+                  
                 ),
               ],
             ),
