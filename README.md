@@ -35,3 +35,6 @@ ndkVersion = flutter.ndkVersion -> ndkVersion = "27.0.12077973" 변경
    - git log origin/main --online
 3. 기타
    - git remote -v : 원격 저장소 이름 확인
+
+### backend와 연결
+- baseUrl = 'http://10.0.2.2:8080' 
