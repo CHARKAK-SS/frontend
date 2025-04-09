@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'spotsearch_screen.dart'; // SpotSearchScreen 추가
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'spotsearch_screen.dart';
 import 'postdetail_screen.dart';
 import 'mypage_screen.dart';
-import 'post_screen.dart'; // PostWriteScreen을 위한 import 추가
+import 'post_screen.dart';
+import 'package:charkak/services/auth_service.dart'; // ✅ AuthService import
 
 class MainPageScreen extends StatefulWidget {
   const MainPageScreen({super.key});
@@ -13,38 +16,53 @@ class MainPageScreen extends StatefulWidget {
 
 class _MainPageScreenState extends State<MainPageScreen> {
   int _selectedIndex = 0;
+  String? _userName; // ✅ 사용자 이름
 
   final List<Map<String, dynamic>> _images = [
-    { 'postid': 1, 'image': 'assets/samples/photo1.jpg' },
-    { 'postid': 2, 'image': 'assets/samples/photo2.jpg' },
-    { 'postid': 3, 'image': 'assets/samples/photo3.jpg' },
-    { 'postid': 4, 'image': 'assets/samples/photo4.jpg' },
-    { 'postid': 5, 'image': 'assets/samples/photo5.jpg' },
-    { 'postid': 6, 'image': 'assets/samples/photo6.jpg' },
-    { 'postid': 7, 'image': 'assets/samples/photo7.jpg' },
-    { 'postid': 8, 'image': 'assets/samples/photo8.jpg' },
-    { 'postid': 9, 'image': 'assets/samples/photo9.jpg' },
-    { 'postid': 10, 'image': 'assets/samples/photo10.jpg' },
-    { 'postid': 11, 'image': 'assets/samples/photo11.jpg' },
-    { 'postid': 12, 'image': 'assets/samples/photo12.jpg' },
+    {'postid': 1, 'image': 'assets/samples/photo1.jpg'},
+    {'postid': 2, 'image': 'assets/samples/photo2.jpg'},
+    {'postid': 3, 'image': 'assets/samples/photo3.jpg'},
+    {'postid': 4, 'image': 'assets/samples/photo4.jpg'},
+    {'postid': 5, 'image': 'assets/samples/photo5.jpg'},
+    {'postid': 6, 'image': 'assets/samples/photo6.jpg'},
+    {'postid': 7, 'image': 'assets/samples/photo7.jpg'},
+    {'postid': 8, 'image': 'assets/samples/photo8.jpg'},
+    {'postid': 9, 'image': 'assets/samples/photo9.jpg'},
+    {'postid': 10, 'image': 'assets/samples/photo10.jpg'},
+    {'postid': 11, 'image': 'assets/samples/photo11.jpg'},
+    {'postid': 12, 'image': 'assets/samples/photo12.jpg'},
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  // ✅ AuthService에서 이름 가져오기
+  Future<void> _loadUserName() async {
+    final name = await AuthService.fetchName();
+    if (name != null) {
+      setState(() {
+        _userName = name;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     const horizontalPadding = 20.0;
-    const spacing = 0.0; // 여백을 0으로 설정
+    const spacing = 0.0;
     final totalSpacing = spacing * 2;
     final availableWidth = screenWidth - (horizontalPadding * 2) - totalSpacing;
-    final imageWidth = availableWidth / 3; // 3개의 이미지를 균등하게 나누기
+    final imageWidth = availableWidth / 3;
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
-        // flexibleSpace를 사용하여 로고를 중앙에 배치하고 + 버튼은 오른쪽에 위치시킴
         flexibleSpace: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -52,20 +70,27 @@ class _MainPageScreenState extends State<MainPageScreen> {
           ],
         ),
         actions: [
-          // + 버튼을 오른쪽에 추가하고 버튼 크기를 키움
+          if (_userName != null) // ✅ 이름이 있을 때만 출력
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 10.0),
+                child: Text(
+                  _userName!,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontFamily: 'PretendardBold',
+                  ),
+                ),
+              ),
+            ),
           IconButton(
-            icon: const Icon(
-              Icons.add,
-              color: Colors.white,
-              size: 30,
-            ), // + 버튼 크기 증가
+            icon: const Icon(Icons.add, color: Colors.white, size: 30),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder:
-                      (context) =>
-                          const PostWriteScreen(), // PostWriteScreen으로 이동
+                  builder: (context) => const PostWriteScreen(),
                 ),
               );
             },
@@ -74,11 +99,11 @@ class _MainPageScreenState extends State<MainPageScreen> {
       ),
       body: GridView.builder(
         padding: EdgeInsets.zero,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          crossAxisSpacing: spacing, // 여백을 0으로 설정
-          mainAxisSpacing: spacing, // 여백을 0으로 설정
-          mainAxisExtent: 205, // 고정된 세로 크기
+          crossAxisSpacing: spacing,
+          mainAxisSpacing: spacing,
+          mainAxisExtent: 205,
         ),
         itemCount: _images.length,
         itemBuilder: (context, index) {
@@ -98,11 +123,8 @@ class _MainPageScreenState extends State<MainPageScreen> {
             },
             child: Container(
               width: imageWidth,
-              color: Colors.white, // 빈 공간을 흰 배경으로 채우기
-              child: Image.asset(
-                post['image'],
-                fit: BoxFit.contain, // 원본 비율을 유지
-              ),
+              color: Colors.white,
+              child: Image.asset(post['image'], fit: BoxFit.contain),
             ),
           );
         },
@@ -113,13 +135,11 @@ class _MainPageScreenState extends State<MainPageScreen> {
           setState(() {
             _selectedIndex = index;
             if (_selectedIndex == 0) {
-              // home 아이콘 선택 시
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const MainPageScreen()),
               );
             } else if (_selectedIndex == 1) {
-              // marker 아이콘 선택 시
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(

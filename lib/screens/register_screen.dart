@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:charkak/services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -8,6 +9,12 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _pwController = TextEditingController();
@@ -82,9 +89,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(width: 10),
                           ElevatedButton(
-                            onPressed: () {
-                              // TODO: 중복확인 로직
+                            onPressed: () async {
+                              final id = _idController.text;
+
+                              if (id.isEmpty) {
+                                _showMessage('아이디를 입력하세요');
+                                return;
+                              }
+
+                              final isAvailable =
+                                  await AuthService.isUsernameAvailable(id);
+                              if (isAvailable) {
+                                _showMessage('사용 가능한 아이디입니다 ✅');
+                              } else {
+                                _showMessage('이미 존재하는 아이디입니다 ❌');
+                              }
                             },
+
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black,
                               shape: RoundedRectangleBorder(
@@ -157,8 +178,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       // 회원가입 버튼
                       Center(
                         child: ElevatedButton(
-                          onPressed: () {
-                            // TODO: 회원가입 처리 로직
+                          onPressed: () async {
+                            final id = _idController.text;
+                            final name = _nameController.text;
+                            final pw = _pwController.text;
+                            final pwConfirm = _pwConfirmController.text;
+
+                            if (id.isEmpty ||
+                                name.isEmpty ||
+                                pw.isEmpty ||
+                                pwConfirm.isEmpty) {
+                              _showMessage('모든 항목을 입력해주세요');
+                              return;
+                            }
+
+                            if (pw != pwConfirm) {
+                              _showMessage('비밀번호가 일치하지 않습니다');
+                              return;
+                            }
+
+                            final error = await AuthService.register(
+                              username: id,
+                              name: name,
+                              password: pw,
+                            );
+
+                            if (error == null) {
+                              _showMessage('회원가입 성공! 🎉');
+                              Navigator.pop(context); // 로그인 화면으로 이동
+                            } else {
+                              _showMessage(error);
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.black,
