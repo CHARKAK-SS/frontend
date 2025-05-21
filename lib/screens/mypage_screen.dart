@@ -4,6 +4,7 @@ import 'spotsearch_screen.dart';
 import 'mainpage_screen.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:charkak/services/auth_service.dart';
 
 class MYpageScreen extends StatefulWidget {
   const MYpageScreen({super.key});
@@ -15,24 +16,48 @@ class MYpageScreen extends StatefulWidget {
 class _MYpageScreenState extends State<MYpageScreen> {
   int _selectedIndex = 2;
   DateTime _focusedMonth = DateTime.now();
-  String _username = '찰칵';
-  final String _userId = 'charkac';
+  String? _userName;
+  String? _userId;
   File? _profileImage;
 
   final Map<String, dynamic> _calendarData = {
-    '2025-04-02': {'image': 'assets/samples/photo1.jpg'},
-    '2025-04-08': {'image': 'assets/samples/photo2.jpg'},
-    '2025-04-13': {'image': 'assets/samples/photo3.jpg'},
-    '2025-04-18': {'image': 'assets/samples/photo7.jpg'},
-    '2025-04-21': {'image': 'assets/samples/photo4.jpg'},
-    '2025-04-26': {
+    '2025-05-02': {'image': 'assets/samples/photo1.jpg'},
+    '2025-05-08': {'image': 'assets/samples/photo2.jpg'},
+    '2025-05-13': {'image': 'assets/samples/photo3.jpg'},
+    '2025-05-18': {'image': 'assets/samples/photo7.jpg'},
+    '2025-05-21': {'image': 'assets/samples/photo4.jpg'},
+    '2025-05-26': {
       'image': 'assets/samples/photo5.jpg',
       'title': '선유도 공원',
       'content': '오늘 선유도 공원으로 출사를 다녀왔다. 일몰을 보면서 사진을 찍으니까 사진을 더 예쁘게 찍을 수 있었던 것 같다. 이 카메라를 처음으로 쓰는거라 아직 조작법이 익숙하지는 않지만 한 번 찍어보니까 다음에는 더 잘 찍을 수 있을 것 같다!'
     },
-    '2025-04-30': {'image': 'assets/samples/photo6.jpg'},
+    '2025-05-30': {'image': 'assets/samples/photo6.jpg'},
   };
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+    _loadUserid();
+  }
+
+  // AuthService에서 정보 가져오기
+  Future<void> _loadUserName() async {
+    final name = await AuthService.fetchName();
+    if (name != null) {
+      setState(() {
+        _userName = name;
+      });
+    }
+  }
+  Future<void> _loadUserid() async {
+    final id = await AuthService.fetchID();
+    if (id != null) {
+      setState(() {
+        _userId = id;
+      });
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,14 +149,20 @@ class _MYpageScreenState extends State<MYpageScreen> {
             children: [
               Row(
                 children: [
-                  Text(_username, style: const TextStyle(fontSize: 25, fontFamily: 'PretendardBold')),
+                  Text(
+                    _userName ?? '...로딩 중...',
+                    style: const TextStyle(
+                      fontSize: 25,
+                      fontFamily: 'PretendardBold',
+                    ),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.edit, size: 18),
                     onPressed: _showEditNameDialog,
                   ),
                 ],
               ),
-              Text('@$_userId', style: const TextStyle(color: Colors.grey, fontFamily: 'PretendardRegular')),
+              Text('@${_userId ?? '...로딩 중...'}', style: const TextStyle(color: Colors.grey, fontFamily: 'PretendardRegular')),
             ],
           ),
         ],
@@ -150,7 +181,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
   }
 
   void _showEditNameDialog() {
-    final controller = TextEditingController(text: _username);
+    final controller = TextEditingController(text: _userName);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -171,11 +202,18 @@ class _MYpageScreenState extends State<MYpageScreen> {
             child: const Text('취소', style: TextStyle(fontFamily: 'PretendardSemiBold')),
           ),
           ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _username = controller.text;
-              });
-              Navigator.pop(context);
+            onPressed: () async {
+              final newName = controller.text;
+              final result = await AuthService.updateName(newName);
+
+              if (result == "success") {
+                setState(() {
+                  _userName = newName;
+                });
+                Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result ?? '오류 발생')));
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.black,
@@ -183,6 +221,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
             ),
             child: const Text('저장', style: TextStyle(fontFamily: 'PretendardSemiBold')),
           ),
+
         ],
       ),
     );

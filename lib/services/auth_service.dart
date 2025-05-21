@@ -79,10 +79,51 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
       return data['name'];
     } else {
       return null;
     }
   }
+
+  static Future<String?> fetchID() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) return null;
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/user/info'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['username'];
+    } else {
+      return null;
+    }
+  }
+
+  static Future<String?> updateName(String newName) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) return null;
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/user/update-name'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'name': newName}),
+    );
+
+    if (response.statusCode == 200) {
+      return "success"; // 성공
+    } else {
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      return data['message'] ?? '닉네임 수정 실패';
+    }
+  }
+
 }
