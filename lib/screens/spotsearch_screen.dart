@@ -223,7 +223,10 @@ class _SpotSearchScreenState extends State<SpotSearchScreen> {
                           context,
                           MaterialPageRoute(
                             builder:
-                                (_) => SpotDetailScreen(placeName: spot.name),
+                                (_) => SpotDetailScreen(
+                                  placeName: spot.name,
+                                  address: spot.address,
+                                ),
                           ),
                         );
                       },

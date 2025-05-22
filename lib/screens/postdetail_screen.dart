@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'spotdetail_screen.dart';
 
-
 final List<Map<String, dynamic>> posts = [
   {
     'postid': 1,
@@ -116,17 +115,15 @@ final List<Map<String, dynamic>> posts = [
   },
 ];
 
-
 class PostDetailScreen extends StatelessWidget {
   final int postid;
   final String imagePath;
 
-  const PostDetailScreen(
-    {
-    super.key, 
+  const PostDetailScreen({
+    super.key,
     required this.postid,
-    required this.imagePath
-    });
+    required this.imagePath,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +131,7 @@ class PostDetailScreen extends StatelessWidget {
     final post = posts.firstWhere((element) => element['postid'] == postid);
 
     final String placeName = post['place'];
+    final String address = post['place']; // 임시 수정
     final String? placepoint = post['placepoint'];
     final String dateTime = post['dateTime'];
     final String cameraInfo = post['cameraInfo'];
@@ -164,7 +162,11 @@ class PostDetailScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => SpotDetailScreen(placeName: placeName),
+                          builder:
+                              (context) => SpotDetailScreen(
+                                placeName: placeName,
+                                address: address, // 임시 수정
+                              ),
                         ),
                       );
                     },
@@ -235,16 +237,15 @@ class PostDetailScreen extends StatelessWidget {
               ),
               const Divider(height: 32),
               Center(
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.cover,
-                  height: 350,
-                ),
+                child: Image.asset(imagePath, fit: BoxFit.cover, height: 350),
               ),
               const Divider(height: 32),
               Text(
                 content,
-                style: const TextStyle(fontSize: 14, fontFamily: 'PretendardRegular'),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'PretendardRegular',
+                ),
               ),
               const SizedBox(height: 40),
             ],
