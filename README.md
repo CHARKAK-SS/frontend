@@ -38,3 +38,9 @@ ndkVersion = flutter.ndkVersion -> ndkVersion = "27.0.12077973" 변경
 
 ### backend와 연결
 - baseUrl = 'http://10.0.2.2:8080' 
+
+### api 연결
+1. 구글맵 api -> android/app/main/AndroidManifest.xml
+  - meta-data의 androdi:value= 부분 구글맵 api key로 수정 필요
+2. 기상청 api -> spotdetail_screen
+  - apiKey 부분 기상청 api key로 수정 필요
