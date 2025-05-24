@@ -18,7 +18,7 @@ class SearchPostcodePage extends StatelessWidget {
         options: const DaumPostcodeOptions(
           animation: true,
           hideEngBtn: true,
-          themeType: DaumPostcodeThemeType.darknessTheme,
+          themeType: DaumPostcodeThemeType.defaultTheme,
         ),
       ),
     );

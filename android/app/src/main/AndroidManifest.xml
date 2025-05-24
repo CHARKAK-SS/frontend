@@ -34,7 +34,7 @@
             android:value="2" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="---구글맵 api---" />
+            android:value="AIzaSyDnkyWedXWV8t6WVz96k16Ong1dRCnt8M8" />
 
     </application>
     <!-- Required to query activities that can process text, see:
