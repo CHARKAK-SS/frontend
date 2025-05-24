@@ -499,7 +499,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         "shutterSpeed": shutterSpeed ?? "",
         "iso": iso ?? "",
         "weather": _temperatureController.text,
-        "imageUrl": "http://example.com/image.jpg",
+        "imageUrl": imageUrl,
         "text": _contentController.text,
         "userId": userId,
         "ratingTagName": selectedTagMap['별점'] ?? "",
@@ -526,7 +526,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('게시 성공!')));
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('게시 실패: ${postResponse.statusCode}')),
