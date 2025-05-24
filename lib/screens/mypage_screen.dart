@@ -541,12 +541,37 @@ void _diaryWrite(BuildContext context, DateTime selectedDate, [String? initialLo
                           showDialog(
                             context: context,
                             builder: (context) => AlertDialog(
-                              title: const Text("입력 오류", style: TextStyle(fontFamily: 'PretendardBold')),
-                              content: const Text("사진과 장소를 모두 입력하세요."),
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              contentPadding: const EdgeInsets.fromLTRB(24, 32, 24, 8), // 위쪽 여백 늘림
+                              content: const Text(
+                                "사진과 장소를 입력하세요.",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontFamily: 'PretendardSemiBold',
+                                  fontSize: 16,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              actionsAlignment: MainAxisAlignment.center,
+                              actionsPadding: const EdgeInsets.only(bottom: 20),
                               actions: [
-                                TextButton(
+                                ElevatedButton(
                                   onPressed: () => Navigator.pop(context),
-                                  child: const Text("확인", style: TextStyle(fontFamily: 'PretendardSemiBold')),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.black,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  ),
+                                  child: const Text(
+                                    "확인",
+                                    style: TextStyle(fontFamily: 'PretendardSemiBold'),
+                                  ),
                                 ),
                               ],
                             ),
