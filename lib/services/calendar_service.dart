@@ -51,7 +51,7 @@ class CalendarService {
         'username': userName,
       }),
     );
-
+    print(userName);
     print('📤 캘린더 저장 요청 보냄: ${response.statusCode}');
     print('📥 응답 내용: ${response.body}');
 

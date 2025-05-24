@@ -31,7 +31,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
 
   Future<void> _loadUserDataAndCalendar() async {
     final name = await AuthService.fetchName();
-    final id = await AuthService.fetchID();
+    final id = await AuthService.fetchUsername();
 
     if (name != null && id != null) {
       setState(() {

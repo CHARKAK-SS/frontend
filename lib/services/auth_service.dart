@@ -125,4 +125,22 @@ class AuthService {
       return data['message'] ?? '닉네임 수정 실패';
     }
   }
+
+  static Future<String?> fetchUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) return null;
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/user/info'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      return data['username']; // 🔥 username 반환
+    } else {
+      return null;
+    }
+  }
 }
