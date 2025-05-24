@@ -1,4 +1,4 @@
-//import 'package:charkak/screens/login_screen.dart';
+import 'package:charkak/screens/login_screen.dart';
 import 'package:charkak/screens/mainpage_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue, // 앱의 기본 테마 색상
       ),
-      home: const MainPageScreen(), // 앱이 실행될 때 첫 화면
+      home: const LoginScreen(), // 앱이 실행될 때 첫 화면
     );
   }
 }
