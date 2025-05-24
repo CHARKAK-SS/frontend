@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 
-const String googleApiKey = 'AIzaSyDnkyWedXWV8t6WVz96k16Ong1dRCnt8M8';
-const String weatherApiKey = 'n7AruI-6Ss-wK7iPuorPKg';
+const String googleApiKey = 'google api key';
+const String weatherApiKey = 'weather api key';
 
 final List<Map<String, dynamic>> observationStations = [
   {'stnId': '108', 'name': '서울', 'lat': 37.5665, 'lon': 126.9780},
