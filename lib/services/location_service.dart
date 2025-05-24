@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 
-const String googleApiKey = 'google api key';
-const String weatherApiKey = 'weather api key';
+const String googleApiKey = 'AIzaSyDnkyWedXWV8t6WVz96k16Ong1dRCnt8M8';
+const String weatherApiKey = 'n7AruI-6Ss-wK7iPuorPKg';
 
 final List<Map<String, dynamic>> observationStations = [
   {'stnId': '108', 'name': '서울', 'lat': 37.5665, 'lon': 126.9780},
@@ -124,11 +124,11 @@ class LocationService {
                     '8': '소나기',
                     '9': '뇌전',
                   }[code] ??
-                  '강수';
+                  '맑음';
             }
           }
 
-          return '🌡️ 기온: $temperature\n🌦️ 날씨: $weather';
+          return '$temperature | $weather';
         } else {
           return '❌ 데이터 파싱 실패: 줄이 부족함';
         }

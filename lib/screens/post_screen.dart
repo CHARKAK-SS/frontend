@@ -7,7 +7,9 @@ import 'search_postcode_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:charkak/services/auth_service.dart';
+import 'package:charkak/services/location_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:charkak/services/post_service.dart';
 
 class PostWriteScreen extends StatefulWidget {
   const PostWriteScreen({super.key});
@@ -26,7 +28,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
 
-  List<File> _selectedImages = [];
+  File? selectedImage;
   List<String> starTags = ['별1개', '별2개', '별3개', '별4개', '별5개'];
   List<String> countryTags = ['국내', '국외'];
   List<String> cityTags = ['서울', '대구', '대전', '부산'];
@@ -45,15 +47,8 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   List<Spot> spots = [];
   bool noResults = false;
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImages.add(File(pickedFile.path));
-      });
-    }
-  }
+  // 🔥 카메라 정보 입력값 저장 변수 추가
+  String? cameraModel, lens, aperture, shutterSpeed, iso;
 
   Future<void> _selectDate(BuildContext context) async {
     final pickedDate = await showDatePicker(
@@ -290,14 +285,24 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
           actions: [
             ElevatedButton(
               onPressed: () {
-                final result = [
-                  modelCtrl.text,
-                  focalCtrl.text.isNotEmpty ? '${focalCtrl.text}mm' : null,
-                  apertureCtrl.text.isNotEmpty ? 'F${apertureCtrl.text}' : null,
-                  shutterCtrl.text.isNotEmpty ? '1/${shutterCtrl.text}s' : null,
-                  isoCtrl.text.isNotEmpty ? 'ISO${isoCtrl.text}' : null,
-                ].whereType<String>().join(' | ');
-                setState(() => _cameraController.text = result);
+                // 🔥 입력값 변수에 저장 (DB에 분리 저장)
+                setState(() {
+                  cameraModel = modelCtrl.text;
+                  lens = focalCtrl.text;
+                  aperture = apertureCtrl.text;
+                  shutterSpeed = shutterCtrl.text;
+                  iso = isoCtrl.text;
+                  // 🔥 UI에 표시할 요약 문자열
+                  _cameraController.text = [
+                    if (cameraModel != null && cameraModel!.isNotEmpty)
+                      cameraModel,
+                    if (lens != null && lens!.isNotEmpty) '${lens}mm',
+                    if (aperture != null && aperture!.isNotEmpty) 'F$aperture',
+                    if (shutterSpeed != null && shutterSpeed!.isNotEmpty)
+                      '1/${shutterSpeed}s',
+                    if (iso != null && iso!.isNotEmpty) 'ISO$iso',
+                  ].join(' | ');
+                });
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
@@ -315,8 +320,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('글 작성'),
-        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -344,10 +348,11 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                 readOnly: true,
                 onTap: _showCameraSpecDialog,
               ),
-              buildUnderlineTextField(
+              buildUnderlineTextFieldWithButton(
                 Icons.thermostat,
                 '온도를 입력하세요',
                 _temperatureController,
+                onPressed: _fetchWeatherAndFillTemperature,
               ),
               const SizedBox(height: 10),
               Row(
@@ -360,36 +365,35 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
               ),
               const SizedBox(height: 20),
               GestureDetector(
-                onTap: _pickImage,
+                onTap: () async {
+                  final picker = ImagePicker();
+                  final picked = await picker.pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      selectedImage = File(picked.path);
+                    });
+                  }
+                },
                 child: Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Center(child: Text('사진을 선택하세요')),
+                  width: double.infinity,
+                  height: selectedImage != null ? 300 : 200,
+                  color: Colors.grey.shade200,
+                  child:
+                      selectedImage != null
+                          ? Center(
+                            child: Image.file(
+                              selectedImage!,
+                              height: 300,
+                              fit: BoxFit.contain,
+                            ),
+                          )
+                          : const Center(child: Text("사진을 선택하세요")),
                 ),
               ),
               const SizedBox(height: 10),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _selectedImages.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 4,
-                  mainAxisSpacing: 4,
-                ),
-                itemBuilder:
-                    (context, index) => ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.file(
-                        _selectedImages[index],
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-              ),
-              const SizedBox(height: 10),
+
               TextField(
                 controller: _contentController,
                 maxLines: 5,
@@ -441,6 +445,43 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         return;
       }
 
+      // ✅ 이미지 선택 여부 확인
+      if (selectedImage == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('사진을 선택하세요')));
+        return;
+      }
+
+      // ✅ 이미지 S3 업로드
+      final imageUrl = await PostService.uploadImageToS3(selectedImage!);
+      if (imageUrl == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('이미지 업로드에 실패했습니다')));
+        return;
+      }
+
+      // 🔥 입력값 유효성 검사 추가
+      if (_placeController.text.trim().isEmpty ||
+          _dateTimeController.text.trim().isEmpty ||
+          (cameraModel == null || cameraModel!.isEmpty) ||
+          (lens == null || lens!.isEmpty) ||
+          (aperture == null || aperture!.isEmpty) ||
+          (shutterSpeed == null || shutterSpeed!.isEmpty) ||
+          (iso == null || iso!.isEmpty) ||
+          _temperatureController.text.trim().isEmpty ||
+          _contentController.text.trim().isEmpty ||
+          selectedTagMap['별점'] == null ||
+          selectedTagMap['국가'] == null ||
+          selectedTagMap['도시'] == null ||
+          selectedTagMap['대상'] == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('모든 입력값과 태그를 선택해야 합니다')));
+        return;
+      }
+
       String dateTime = _dateTimeController.text
           .replaceAll('오전', 'AM')
           .replaceAll('오후', 'PM');
@@ -452,15 +493,15 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       Map<String, dynamic> postData = {
         "placeName": _placeController.text,
         "dateTime": formattedDateTime,
-        "camera": _cameraController.text,
-        "lens": "",
-        "aperture": "",
-        "shutterSpeed": "",
-        "iso": "",
+        "camera": cameraModel ?? "",
+        "lens": lens ?? "",
+        "aperture": aperture ?? "",
+        "shutterSpeed": shutterSpeed ?? "",
+        "iso": iso ?? "",
         "weather": _temperatureController.text,
         "imageUrl": "http://example.com/image.jpg",
         "text": _contentController.text,
-        "userId": userId, // 🔥 유저 ID
+        "userId": userId,
         "ratingTagName": selectedTagMap['별점'] ?? "",
         "countryTagName": selectedTagMap['국가'] ?? "",
         "cityTagName": selectedTagMap['도시'] ?? "",
@@ -514,9 +555,82 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         onTap: onTap,
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.black),
+          hintText: hint, // 🪄 hintText 지정
+          border: UnderlineInputBorder(), // ✅ Underline 추가!
         ),
       ),
     );
+  }
+
+  // 🔥 수정된 부분: 날씨 입력란 우측 버튼 포함 함수 추가
+  Widget buildUnderlineTextFieldWithButton(
+    IconData icon,
+    String hint,
+    TextEditingController controller, {
+    required VoidCallback onPressed,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                prefixIcon: Icon(icon, color: Colors.black),
+                hintText: hint,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black),
+            onPressed: onPressed,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔥 수정된 부분: 날씨 자동입력 로직 추가
+  Future<void> _fetchWeatherAndFillTemperature() async {
+    final address = _selectedAddress ?? _placeController.text.trim();
+    final dateTimeInput = _dateTimeController.text.trim();
+
+    if (address.isEmpty || dateTimeInput.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('주소와 날짜/시간을 입력하세요')));
+      return;
+    }
+
+    try {
+      DateTime parsedDate = DateFormat(
+        'yyyy-MM-dd h:mm a',
+      ).parse(dateTimeInput.replaceAll('오전', 'AM').replaceAll('오후', 'PM'));
+      if (parsedDate.minute > 0) {
+        parsedDate = parsedDate
+            .add(Duration(hours: 1))
+            .subtract(Duration(minutes: parsedDate.minute));
+      }
+      final date = DateFormat('yyyyMMdd').format(parsedDate);
+      final time = DateFormat('HH00').format(parsedDate);
+
+      print('🌐 자동입력: 장소명: ${_placeController.text}');
+      print('🌐 자동입력: 주소: $address');
+      print('🌐 자동입력: 요청 시간: $date $time');
+
+      final result = await LocationService.fetchWeather(address, date, time);
+      print('🌐 자동입력: 날씨 응답: $result');
+
+      setState(() {
+        _temperatureController.text = result.replaceAll('\n', ' ');
+      });
+    } catch (e) {
+      print('🚨 자동입력 오류: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('날씨 자동 입력 오류: $e')));
+    }
   }
 
   Widget buildTagDropdown(String label, List<String> items) {

@@ -223,10 +223,8 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                             context,
                             MaterialPageRoute(
                               builder:
-                                  (context) => PostDetailScreen(
-                                    postid: post['postid'],
-                                    imagePath: post['image'],
-                                  ),
+                                  (context) =>
+                                      PostDetailScreen(postId: post['postid']),
                             ),
                           );
                         },
@@ -396,10 +394,8 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) => PostDetailScreen(
-                                postid: post['postid'],
-                                imagePath: post['image'],
-                              ),
+                              (context) =>
+                                  PostDetailScreen(postId: post['postid']),
                         ),
                       );
                     },

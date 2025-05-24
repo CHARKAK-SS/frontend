@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'spotsearch_screen.dart';
 import 'postdetail_screen.dart';
 import 'mypage_screen.dart';
 import 'post_screen.dart';
-import 'package:charkak/services/auth_service.dart';
+import 'package:charkak/services/post_service.dart';
 
 class MainPageScreen extends StatefulWidget {
   const MainPageScreen({super.key});
@@ -16,22 +15,27 @@ class MainPageScreen extends StatefulWidget {
 
 class _MainPageScreenState extends State<MainPageScreen> {
   int _selectedIndex = 0;
+  List<dynamic> _posts = [];
+  bool _isLoading = true;
 
-  final List<Map<String, dynamic>> _images = [
-    {'postid': 1, 'image': 'assets/samples/photo1.jpg'},
-    {'postid': 2, 'image': 'assets/samples/photo2.jpg'},
-    {'postid': 3, 'image': 'assets/samples/photo3.jpg'},
-    {'postid': 4, 'image': 'assets/samples/photo4.jpg'},
-    {'postid': 5, 'image': 'assets/samples/photo5.jpg'},
-    {'postid': 6, 'image': 'assets/samples/photo6.jpg'},
-    {'postid': 7, 'image': 'assets/samples/photo7.jpg'},
-    {'postid': 8, 'image': 'assets/samples/photo8.jpg'},
-    {'postid': 9, 'image': 'assets/samples/photo9.jpg'},
-    {'postid': 10, 'image': 'assets/samples/photo10.jpg'},
-    {'postid': 11, 'image': 'assets/samples/photo11.jpg'},
-    {'postid': 12, 'image': 'assets/samples/photo12.jpg'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadPosts();
+  }
 
+  Future<void> _loadPosts() async {
+    try {
+      final posts = await PostService.fetchPosts();
+      setState(() {
+        _posts = posts;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("❌ 게시물 불러오기 오류: $e");
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,49 +60,52 @@ class _MainPageScreenState extends State<MainPageScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white, size: 30),
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const PostWriteScreen(),
                 ),
               );
+              if (result == true) {
+                _loadPosts();
+              }
             },
           ),
         ],
       ),
-      body: GridView.builder(
-        padding: EdgeInsets.zero,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: spacing,
-          mainAxisSpacing: spacing,
-          mainAxisExtent: 205,
-        ),
-        itemCount: _images.length,
-        itemBuilder: (context, index) {
-          final post = _images[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (context) => PostDetailScreen(
-                        postid: post['postid'],
-                        imagePath: post['image'],
-                      ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : GridView.builder(
+                padding: EdgeInsets.zero,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
+                  mainAxisExtent: 205,
                 ),
-              );
-            },
-            child: Container(
-              width: imageWidth,
-              color: Colors.white,
-              child: Image.asset(post['image'], fit: BoxFit.contain),
-            ),
-          );
-        },
-      ),
+                itemCount: _posts.length,
+                itemBuilder: (context, index) {
+                  final post = _posts[index];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => PostDetailScreen(postId: post['id']),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: imageWidth,
+                      color: Colors.white,
+                      child: Image.network(post['imageUrl'], fit: BoxFit.cover),
+                    ),
+                  );
+                },
+              ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
