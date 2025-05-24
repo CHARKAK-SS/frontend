@@ -97,8 +97,8 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['username'];
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      return data['id'].toString(); // 🔥 id를 String으로 반환
     } else {
       return null;
     }

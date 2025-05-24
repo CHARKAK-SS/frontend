@@ -422,7 +422,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      print('🔑 저장된 토큰: $token'); // ⭐️ 토큰 출력
+      print('🔑 저장된 토큰: $token');
 
       if (token == null) {
         ScaffoldMessenger.of(
@@ -431,24 +431,15 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         return;
       }
 
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:8080/api/user/info'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
-      print('🌐 유저 정보 응답 코드: ${response.statusCode}');
-      print('🌐 유저 정보 응답 바디: ${response.body}');
-
-      if (response.statusCode != 200) {
+      // 🔥 유저 ID 가져오기 (fetchID 사용)
+      final userId = await AuthService.fetchID();
+      print('👤 유저 ID: $userId');
+      if (userId == null) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('유저 정보를 가져오지 못했습니다')));
         return;
       }
-
-      final userData = jsonDecode(response.body);
-      final userId = userData['id'];
-      print('👤 유저 ID: $userId'); // ⭐️ userId 출력
 
       String dateTime = _dateTimeController.text
           .replaceAll('오전', 'AM')
@@ -469,14 +460,14 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         "weather": _temperatureController.text,
         "imageUrl": "http://example.com/image.jpg",
         "text": _contentController.text,
-        "userId": userId,
+        "userId": userId, // 🔥 유저 ID
         "ratingTagName": selectedTagMap['별점'] ?? "",
         "countryTagName": selectedTagMap['국가'] ?? "",
         "cityTagName": selectedTagMap['도시'] ?? "",
         "targetTagName": selectedTagMap['대상'] ?? "",
       };
 
-      print('📦 전송할 데이터: $postData'); // ⭐️ POST 데이터 출력
+      print('📦 전송할 데이터: $postData');
 
       var postResponse = await http.post(
         Uri.parse('http://10.0.2.2:8080/api/posts'),
