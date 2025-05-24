@@ -4,7 +4,6 @@ import 'spotsearch_screen.dart';
 import 'mainpage_screen.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:image/image.dart' as img;
 import 'package:charkak/services/auth_service.dart';
 import 'package:charkak/services/calendar_service.dart';
 
