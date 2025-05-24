@@ -5,7 +5,7 @@ import 'spotsearch_screen.dart';
 import 'postdetail_screen.dart';
 import 'mypage_screen.dart';
 import 'post_screen.dart';
-import 'package:charkak/services/auth_service.dart'; // ✅ AuthService import
+import 'package:charkak/services/auth_service.dart';
 
 class MainPageScreen extends StatefulWidget {
   const MainPageScreen({super.key});
@@ -16,7 +16,6 @@ class MainPageScreen extends StatefulWidget {
 
 class _MainPageScreenState extends State<MainPageScreen> {
   int _selectedIndex = 0;
-  String? _userName; // ✅ 사용자 이름
 
   final List<Map<String, dynamic>> _images = [
     {'postid': 1, 'image': 'assets/samples/photo1.jpg'},
@@ -33,21 +32,6 @@ class _MainPageScreenState extends State<MainPageScreen> {
     {'postid': 12, 'image': 'assets/samples/photo12.jpg'},
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _loadUserName();
-  }
-
-  // ✅ AuthService에서 이름 가져오기
-  Future<void> _loadUserName() async {
-    final name = await AuthService.fetchName();
-    if (name != null) {
-      setState(() {
-        _userName = name;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,20 +54,6 @@ class _MainPageScreenState extends State<MainPageScreen> {
           ],
         ),
         actions: [
-          if (_userName != null) // ✅ 이름이 있을 때만 출력
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 10.0),
-                child: Text(
-                  _userName!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontFamily: 'PretendardBold',
-                  ),
-                ),
-              ),
-            ),
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white, size: 30),
             onPressed: () {

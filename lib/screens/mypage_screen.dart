@@ -730,7 +730,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
                             });
 
                             Navigator.pop(context);
-                            //Navigator.pop(context);
 
                             _loadUserDataAndCalendar();
                           } else {

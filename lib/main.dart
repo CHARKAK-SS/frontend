@@ -1,5 +1,5 @@
 import 'package:charkak/screens/login_screen.dart';
-//import 'package:charkak/screens/mainpage_screen.dart';
+import 'package:charkak/screens/mainpage_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 //import 'screens/test.dart';
