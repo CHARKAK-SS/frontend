@@ -45,6 +45,7 @@ class _MainPageScreenState extends State<MainPageScreen> {
     final totalSpacing = spacing * 2;
     final availableWidth = screenWidth - (horizontalPadding * 2) - totalSpacing;
     final imageWidth = availableWidth / 3;
+    final imageHeight = imageWidth/2 *3;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -81,9 +82,9 @@ class _MainPageScreenState extends State<MainPageScreen> {
                 padding: EdgeInsets.zero,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
-                  crossAxisSpacing: spacing,
-                  mainAxisSpacing: spacing,
-                  mainAxisExtent: 205,
+                  crossAxisSpacing: 0,
+                  mainAxisSpacing: 0,
+                  mainAxisExtent: 200,
                 ),
                 itemCount: _posts.length,
                 itemBuilder: (context, index) {
@@ -100,8 +101,9 @@ class _MainPageScreenState extends State<MainPageScreen> {
                     },
                     child: Container(
                       width: imageWidth,
+                      height: imageHeight,
                       color: Colors.white,
-                      child: Image.network(post['imageUrl'], fit: BoxFit.cover),
+                      child: Image.network(post['imageUrl'], fit: BoxFit.fitWidth),
                     ),
                   );
                 },
