@@ -7,7 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart'; // LatLng 타입 
 
 class WeatherService {
   static const String _apiKey =
-      'BPH/fZn5ud0gIikTDxYJG/++G4Jr9lGQj1YBWsVlyCvKNMi/3u7TtWuviUy6iI0QWFqOUt+h7L5CN8rNttbicg==';
+      'weather api';
 
   // 공통: 위도경도 → 격자 좌표 변환
   static Map<String, int> _convertToGrid(double lat, double lon) {
