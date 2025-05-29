@@ -57,13 +57,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           final String shutterSpeed = post['shutterSpeed'] ?? '';
           final String iso = post['iso'] ?? '';
           final String cameraInfo = [
-            camera,
-            lens,
-            aperture,
-            shutterSpeed,
-            iso,
-          ].where((e) => e.isNotEmpty).join(' | ');
-          final String weather = post['weather'] ?? '';
+            if (camera.isNotEmpty) camera,
+            if (lens.isNotEmpty) '${lens}mm', // mm 단위 추가
+            if (aperture.isNotEmpty) 'F$aperture', // F 단위 추가
+            if (shutterSpeed.isNotEmpty) '1/${shutterSpeed}s', // s 단위 추가
+            if (iso.isNotEmpty) 'ISO$iso', // ISO 추가
+          ].join(' | ');
+          final String weather = post['wearther'] ?? '';
           final String imageUrl = post['imageUrl'] ?? '';
           final String content = post['text'] ?? '';
 

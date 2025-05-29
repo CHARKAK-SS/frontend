@@ -31,7 +31,10 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   File? selectedImage;
   List<String> starTags = ['별1개', '별2개', '별3개', '별4개', '별5개'];
   List<String> countryTags = ['국내', '국외'];
-  List<String> cityTags = ['서울', '대구', '대전', '부산'];
+  final Map<String, List<String>> cityOptions = {
+    '국내': ['서울', '대구', '대전', '부산', '인천', '광주', '천안', '원주', '구미', '세종', '경주'],
+    '국외': ['미국', '캐나다', '영국', '독일', '스페인', '일본', '중국', '베트남', '태국'],
+  };
   List<String> subjectTags = ['인물', '풍경', '사물', '동물', '야경'];
 
   Map<String, String?> selectedTagMap = {
@@ -143,7 +146,13 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                         Navigator.pop(context);
                         _showAddPlacePopup();
                       },
-                      child: const Text('장소 추가'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                      ),
+                      child: const Text(
+                        '장소 추가',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
@@ -151,7 +160,10 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('닫기'),
+                  child: const Text(
+                    '닫기',
+                    style: TextStyle(color: Colors.black),
+                  ),
                 ),
               ],
             );
@@ -314,6 +326,55 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     );
   }
 
+  // country 선택 시 선택된 도시를 초기화하고 옵션 동적 반영
+  Widget buildTagDropdown(String label, List<String> items) {
+    // 🔥 country 옵션일 경우 동적 반영
+    if (label == '도시') {
+      final selectedCountry = selectedTagMap['국가'];
+      items =
+          selectedCountry != null
+              ? cityOptions[selectedCountry] ?? []
+              : ['국가 선택 후 도시 선택']; // 기본값 표시
+    }
+
+    return PopupMenuButton<String>(
+      color: Colors.white,
+      offset: Offset(0, 40),
+      onSelected: (value) {
+        setState(() {
+          selectedTagMap[label] = value;
+          if (label == '국가') {
+            // 🔥 국가 변경 시 도시 초기화
+            selectedTagMap['도시'] = null;
+          }
+        });
+      },
+      itemBuilder:
+          (_) =>
+              items
+                  .map((e) => PopupMenuItem(value: e, child: Text(e)))
+                  .toList(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: const EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              selectedTagMap[label] ?? label,
+              style: const TextStyle(color: Colors.white),
+            ),
+            const Icon(Icons.arrow_drop_down, color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -359,7 +420,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                 children: [
                   buildTagDropdown('별점', starTags),
                   buildTagDropdown('국가', countryTags),
-                  buildTagDropdown('도시', cityTags),
+                  buildTagDropdown('도시', []), // 🔥 수정
                   buildTagDropdown('대상', subjectTags),
                 ],
               ),
@@ -379,7 +440,10 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                 child: Container(
                   width: double.infinity,
                   height: selectedImage != null ? 300 : 200,
-                  color: Colors.grey.shade200,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.black, width: 1),
+                  ),
                   child:
                       selectedImage != null
                           ? Center(
@@ -631,34 +695,5 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('날씨 자동 입력 오류: $e')));
     }
-  }
-
-  Widget buildTagDropdown(String label, List<String> items) {
-    return PopupMenuButton<String>(
-      onSelected: (value) => setState(() => selectedTagMap[label] = value),
-      itemBuilder:
-          (_) =>
-              items
-                  .map((e) => PopupMenuItem(value: e, child: Text(e)))
-                  .toList(),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        margin: const EdgeInsets.only(right: 8),
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              selectedTagMap[label] ?? label,
-              style: const TextStyle(color: Colors.white),
-            ),
-            const Icon(Icons.arrow_drop_down, color: Colors.white),
-          ],
-        ),
-      ),
-    );
   }
 }

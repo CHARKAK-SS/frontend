@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'postdetail_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -65,7 +67,11 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
 
   final List<String> starTags = ['별1개', '별2개', '별3개', '별4개', '별5개'];
   final List<String> countryTags = ['국내', '국외'];
-  final List<String> cityTags = ['서울', '대구', '대전', '부산'];
+  final Map<String, List<String>> cityOptions = {
+    // 🔥 추가: 국가별 도시 옵션
+    '국내': ['서울', '대구', '대전', '부산', '인천', '광주', '천안', '원주', '구미', '세종', '경주'],
+    '국외': ['미국', '캐나다', '영국', '독일', '스페인', '일본', '중국', '베트남', '태국'],
+  };
   final List<String> subjectTags = ['인물', '풍경', '사물', '동물', '야경'];
 
   @override
@@ -103,7 +109,7 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
           allPosts = data.map((item) => Post.fromJson(item)).toList();
-          filteredPosts = List.from(allPosts); // 🔥 초기화 시 전체 사진 출력
+          filteredPosts = List.from(allPosts); // 🔥 초기화 시 전체 출력
           isLoadingPosts = false;
         });
       } else {
@@ -116,11 +122,8 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
     }
   }
 
-  // 🔥 태그 선택 후 OR 조건으로 필터링
-  // 🔥 서버에 선택된 태그 조건 포함해 재요청
   void _applyTagFilter() async {
     try {
-      // 선택된 태그를 파라미터로 만듦
       String url =
           'http://10.0.2.2:8080/api/posts/search?placeName=${Uri.encodeComponent(widget.placeName)}';
       if (selectedTags['별점'] != null)
@@ -133,7 +136,6 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
         url += '&targetTagName=${Uri.encodeComponent(selectedTags['대상']!)}';
 
       print('🔥 서버 요청 URL: $url');
-
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -226,7 +228,9 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
               const SizedBox(height: 10),
               const Divider(thickness: 1, color: Colors.black),
               const SizedBox(height: 10),
-              Row(
+              Wrap(
+                spacing: 5, // 태그들 사이 간격 조정
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   GestureDetector(
                     onTap: () => _showTagFilterBottomSheet(context),
@@ -235,10 +239,10 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                       width: 18,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 7),
                   ...selectedTags.entries
                       .where((e) => e.value != null)
-                      .map((e) => _buildTag('${e.key}: ${e.value}'))
+                      .map((e) => _buildTag('#${e.value}'))
                       .toList(),
                 ],
               ),
@@ -248,34 +252,30 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                   : GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: ((filteredPosts.length + 2) ~/ 3) * 3,
+                    itemCount:
+                        ((filteredPosts.length + 2) ~/ 3) * 3, // 남는 칸까지 처리
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 4,
-                          mainAxisSpacing: 4,
-                          mainAxisExtent: 120,
+                          crossAxisCount: 3, // 한 줄에 3개
+                          crossAxisSpacing: 0, // 칸 사이 여백 없음
+                          mainAxisSpacing: 0, // 줄 사이 여백 없음
+                          //childAspectRatio: 1, // 정사각형 비율
                         ),
                     itemBuilder: (context, index) {
                       if (index < filteredPosts.length) {
                         final post = filteredPosts[index];
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) =>
-                                        PostDetailScreen(postId: post.id),
-                              ),
-                            );
-                          },
-                          child: Image.network(
-                            post.imageUrl,
-                            fit: BoxFit.cover,
+                        return Padding(
+                          padding: const EdgeInsets.all(0), // 여백 완전 제거
+                          child: Container(
+                            color: Colors.white, // 배경 흰색
+                            child: Image.network(
+                              post.imageUrl,
+                              fit: BoxFit.contain, // 사진 비율 유지
+                            ),
                           ),
                         );
                       } else {
+                        // 남는 칸은 흰색 배경
                         return Container(color: Colors.white);
                       }
                     },
@@ -336,7 +336,9 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                   ),
                   _buildFilterChips(
                     '도시',
-                    cityTags,
+                    tempSelected['국가'] != null
+                        ? cityOptions[tempSelected['국가']] ?? []
+                        : [], // 🔥 동적 도시 리스트
                     tempSelected,
                     setModalState,
                   ),
@@ -347,25 +349,22 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                     setModalState,
                   ),
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          selectedTags = tempSelected;
-                          _applyTagFilter(); // 🔥 선택 후 필터링
-                        });
-                        Navigator.pop(context);
-                      },
-                      child: const Text(
-                        '적용하기',
-                        style: TextStyle(color: Colors.white),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        selectedTags = tempSelected;
+                        _applyTagFilter();
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: const Text(
+                      '적용하기',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
@@ -388,22 +387,36 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        if (options.isEmpty) // 🔥 안내 메시지 추가
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text('먼저 국가를 선택하세요', style: TextStyle(color: Colors.grey)),
+          ),
         Wrap(
           spacing: 8,
           children:
               options.map((option) {
                 final selected = tempSelected[label] == option;
                 return FilterChip(
-                  label: Text(option),
+                  label: Text(
+                    option,
+                    style: TextStyle(
+                      color: selected ? Colors.white : Colors.black,
+                    ),
+                  ),
                   selected: selected,
                   onSelected: (bool value) {
                     setModalState(() {
                       tempSelected[label] = value ? option : null;
+                      if (label == '국가') {
+                        tempSelected['도시'] = null; // 🔥 국가 선택 시 도시 초기화
+                      }
                     });
                   },
                   selectedColor: Colors.black,
                   checkmarkColor: Colors.white,
                   backgroundColor: Colors.white,
+                  side: BorderSide(color: Colors.black, width: 1.5),
                 );
               }).toList(),
         ),
