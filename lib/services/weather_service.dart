@@ -6,13 +6,8 @@ import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class WeatherService {
-<<<<<<< HEAD
   // 🔥 인증키는 디코딩된 버전을 그대로 넣음 (Encoding 하지 않음)
   static const String _apiKey = 'decode key';
-=======
-  static const String _apiKey =
-      'weather api';
->>>>>>> dab40d2cd171a57a165b0f0283a40c36c9d5475b
 
   // 위도/경도 -> 격자 좌표 변환
   static Map<String, int> _convertToGrid(double lat, double lon) {
