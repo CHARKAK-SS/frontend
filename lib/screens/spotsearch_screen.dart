@@ -37,7 +37,18 @@ class _SpotSearchScreenState extends State<SpotSearchScreen> {
 
     try {
       final results = await SpotSearchService.searchSpots(keyword);
-      setState(() => _spots = results);
+
+      // 🔥 대표 이미지 비동기로 붙이기
+      final updatedResults = await Future.wait(
+        results.map((spot) async {
+          final imageUrl = await SpotSearchService.fetchFirstImageForPlace(
+            spot.name,
+          );
+          return spot.copyWith(thumbnailUrl: imageUrl);
+        }),
+      );
+
+      setState(() => _spots = updatedResults);
     } catch (e) {
       print('검색 실패: $e');
     }
@@ -203,10 +214,15 @@ class _SpotSearchScreenState extends State<SpotSearchScreen> {
                 children: [
                   ..._spots.map((spot) {
                     return ListTile(
-                      leading: const CircleAvatar(
+                      leading: CircleAvatar(
                         backgroundColor: Colors.black12,
-                        backgroundImage: AssetImage('assets/icons/marker.png'),
+                        backgroundImage:
+                            spot.thumbnailUrl != null
+                                ? NetworkImage(spot.thumbnailUrl!)
+                                : const AssetImage('assets/icons/marker.png')
+                                    as ImageProvider,
                       ),
+
                       title: Text(
                         spot.name,
                         style: const TextStyle(

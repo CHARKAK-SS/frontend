@@ -58,20 +58,9 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
   List<Post> filteredPosts = [];
   bool isLoadingPosts = true;
 
-  Map<String, String?> selectedTags = {
-    '별점': null,
-    '국가': null,
-    '도시': null,
-    '대상': null,
-  };
+  Map<String, String?> selectedTags = {'별점': null, '대상': null};
 
   final List<String> starTags = ['별1개', '별2개', '별3개', '별4개', '별5개'];
-  final List<String> countryTags = ['국내', '국외'];
-  final Map<String, List<String>> cityOptions = {
-    // 🔥 추가: 국가별 도시 옵션
-    '국내': ['서울', '대구', '대전', '부산', '인천', '광주', '천안', '원주', '구미', '세종', '경주'],
-    '국외': ['미국', '캐나다', '영국', '독일', '스페인', '일본', '중국', '베트남', '태국'],
-  };
   final List<String> subjectTags = ['인물', '풍경', '사물', '동물', '야경'];
 
   @override
@@ -128,10 +117,6 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
           'http://10.0.2.2:8080/api/posts/search?placeName=${Uri.encodeComponent(widget.placeName)}';
       if (selectedTags['별점'] != null)
         url += '&ratingTagName=${Uri.encodeComponent(selectedTags['별점']!)}';
-      if (selectedTags['국가'] != null)
-        url += '&countryTagName=${Uri.encodeComponent(selectedTags['국가']!)}';
-      if (selectedTags['도시'] != null)
-        url += '&cityTagName=${Uri.encodeComponent(selectedTags['도시']!)}';
       if (selectedTags['대상'] != null)
         url += '&targetTagName=${Uri.encodeComponent(selectedTags['대상']!)}';
 
@@ -226,7 +211,7 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                 ],
               ),
               const SizedBox(height: 10),
-              const Divider(thickness: 1, color: Colors.black),
+              const Divider(thickness: 1.5, color: Colors.black),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 5, // 태그들 사이 간격 조정
@@ -252,30 +237,42 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                   : GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount:
-                        ((filteredPosts.length + 2) ~/ 3) * 3, // 남는 칸까지 처리
+                    padding: EdgeInsets.zero,
+                    itemCount: ((filteredPosts.length + 2) ~/ 3) * 3, // 남는 칸 포함
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3, // 한 줄에 3개
-                          crossAxisSpacing: 0, // 칸 사이 여백 없음
-                          mainAxisSpacing: 0, // 줄 사이 여백 없음
-                          //childAspectRatio: 1, // 정사각형 비율
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 0, // ✅ 간격 1px
+                          mainAxisSpacing: 1,
+                          mainAxisExtent: 185, // ✅ 고정된 높이
                         ),
                     itemBuilder: (context, index) {
                       if (index < filteredPosts.length) {
                         final post = filteredPosts[index];
-                        return Padding(
-                          padding: const EdgeInsets.all(0), // 여백 완전 제거
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) =>
+                                        PostDetailScreen(postId: post.id),
+                              ),
+                            );
+                          },
                           child: Container(
-                            color: Colors.white, // 배경 흰색
+                            color: Colors.white, // ✅ 배경 흰색
+                            alignment: Alignment.center,
                             child: Image.network(
                               post.imageUrl,
-                              fit: BoxFit.contain, // 사진 비율 유지
+                              fit: BoxFit.contain, // ✅ 원본 비율 유지
+                              width: double.infinity,
+                              height: double.infinity,
                             ),
                           ),
                         );
                       } else {
-                        // 남는 칸은 흰색 배경
+                        // 빈 칸 처리
                         return Container(color: Colors.white);
                       }
                     },
@@ -329,20 +326,6 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                     setModalState,
                   ),
                   _buildFilterChips(
-                    '국가',
-                    countryTags,
-                    tempSelected,
-                    setModalState,
-                  ),
-                  _buildFilterChips(
-                    '도시',
-                    tempSelected['국가'] != null
-                        ? cityOptions[tempSelected['국가']] ?? []
-                        : [], // 🔥 동적 도시 리스트
-                    tempSelected,
-                    setModalState,
-                  ),
-                  _buildFilterChips(
                     '대상',
                     subjectTags,
                     tempSelected,
@@ -387,11 +370,6 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        if (options.isEmpty) // 🔥 안내 메시지 추가
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Text('먼저 국가를 선택하세요', style: TextStyle(color: Colors.grey)),
-          ),
         Wrap(
           spacing: 8,
           children:
@@ -408,9 +386,6 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                   onSelected: (bool value) {
                     setModalState(() {
                       tempSelected[label] = value ? option : null;
-                      if (label == '국가') {
-                        tempSelected['도시'] = null; // 🔥 국가 선택 시 도시 초기화
-                      }
                     });
                   },
                   selectedColor: Colors.black,

@@ -44,8 +44,9 @@ class PostService {
       headers: {'Authorization': 'Bearer $token'},
     );
 
+    // 수정
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     } else {
       throw Exception('게시물 불러오기 실패');
     }

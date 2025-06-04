@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:geocoding/geocoding.dart'; // 주소 → 위도경도 변환용
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // LatLng 타입 사용
+import 'package:geocoding/geocoding.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class WeatherService {
-  static const String _apiKey =
-      'BPH/fZn5ud0gIikTDxYJG/++G4Jr9lGQj1YBWsVlyCvKNMi/3u7TtWuviUy6iI0QWFqOUt+h7L5CN8rNttbicg==';
+  // 🔥 인증키는 디코딩된 버전을 그대로 넣음 (Encoding 하지 않음)
+  static const String _apiKey = 'decode key';
 
-  // 공통: 위도경도 → 격자 좌표 변환
+  // 위도/경도 -> 격자 좌표 변환
   static Map<String, int> _convertToGrid(double lat, double lon) {
     const double RE = 6371.00877,
         GRID = 5.0,
@@ -40,14 +40,15 @@ class WeatherService {
     return {'nx': x, 'ny': y};
   }
 
-  // 공통: KMA API URL 생성
+  // URL 생성 시 Uri.https로 안전하게 인코딩 처리
   static String _buildUrl(int nx, int ny, DateTime time) {
     final baseDate = DateFormat('yyyyMMdd').format(time);
     final baseTime = DateFormat(
       'HHmm',
     ).format(time.subtract(const Duration(hours: 1)));
+
     final query = {
-      'serviceKey': _apiKey,
+      'serviceKey': _apiKey, // 🔥 Uri.https가 자동으로 인코딩 처리해줌
       'numOfRows': '10',
       'pageNo': '1',
       'dataType': 'JSON',
@@ -56,6 +57,7 @@ class WeatherService {
       'nx': nx.toString(),
       'ny': ny.toString(),
     };
+
     return Uri.https(
       'apis.data.go.kr',
       '/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst',
@@ -63,7 +65,6 @@ class WeatherService {
     ).toString();
   }
 
-  // 🔍 주소와 시간으로 날씨 검색
   static Future<String?> fetchWeather(String address, DateTime time) async {
     try {
       final locations = await locationFromAddress(address);
@@ -81,7 +82,10 @@ class WeatherService {
         return 'API 호출 실패(${response.statusCode})';
 
       final json = jsonDecode(utf8.decode(response.bodyBytes));
-      final items = json['response']['body']['items']['item'] as List;
+      final items =
+          (json['response']?['body']?['items']?['item'] ?? []) as List;
+
+      if (items.isEmpty) return '날씨 데이터 없음';
 
       String temp = '', sky = '', pty = '';
       for (var item in items) {
@@ -102,12 +106,10 @@ class WeatherService {
     }
   }
 
-  // 🌤️ 현재 시간 기준 날씨
   static Future<String?> fetchCurrentWeather(String address) {
     return fetchWeather(address, DateTime.now());
   }
 
-  // 🔥 주소 → 위도경도 + 현재 날씨 반환
   static Future<Map<String, dynamic>> fetchWeatherAndLocation(
     String address,
   ) async {

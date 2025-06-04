@@ -5,13 +5,13 @@ class Spot {
   final int id;
   final String name;
   final String address;
-  final String? imageUrl;
+  final String? thumbnailUrl;
 
   Spot({
     required this.id,
     required this.name,
     required this.address,
-    this.imageUrl,
+    this.thumbnailUrl,
   });
 
   factory Spot.fromJson(Map<String, dynamic> json) {
@@ -19,7 +19,15 @@ class Spot {
       id: json['id'],
       name: json['name'],
       address: json['address'],
-      imageUrl: json['imageUrl'],
+      thumbnailUrl: json['thumbnailUrl'],
+    );
+  }
+  Spot copyWith({String? thumbnailUrl}) {
+    return Spot(
+      id: id,
+      name: name,
+      address: address,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
     );
   }
 }
@@ -57,5 +65,29 @@ class SpotSearchService {
     } else {
       throw Exception('장소 추가 실패: ${response.statusCode} ${response.body}');
     }
+  }
+
+  static Future<String?> fetchFirstImageForPlace(String placeName) async {
+    try {
+      final encodedPlace = Uri.encodeComponent(placeName);
+      final url =
+          'http://10.0.2.2:8080/api/posts/search?placeName=$encodedPlace';
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+
+        if (data.isNotEmpty && data[0]['imageUrl'] != null) {
+          return data[0]['imageUrl'];
+        }
+      } else {
+        print('❌ 서버 응답 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ 이미지 불러오기 실패: $e');
+    }
+
+    return null; // 실패하거나 이미지 없을 경우
   }
 }
