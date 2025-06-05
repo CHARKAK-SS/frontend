@@ -5,16 +5,18 @@ import 'spotsearch_screen.dart';
 import 'mypage_screen.dart';
 import 'post_screen.dart';
 import 'package:charkak/services/post_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 // 🧩 Post 모델 정의 (이미 별도 파일에 있다면 import)
 class Post {
   final int id;
   final String imageUrl;
-  final String? ratingTag, countryTag, cityTag, targetTag;
+  final String? ratingTag, countryTag, cityTag, targetTag, thumbnailUrl;
 
   Post({
     required this.id,
     required this.imageUrl,
+    this.thumbnailUrl,
     this.ratingTag,
     this.countryTag,
     this.cityTag,
@@ -27,6 +29,7 @@ class Post {
     return Post(
       id: json['id'],
       imageUrl: json['imageUrl'],
+      thumbnailUrl: json['thumbnailUrl'],
       ratingTag: json['ratingTagName']?.toString(), // ⭐️ 널체크 + 문자열 변환
       countryTag: json['countryTagName']?.toString(),
       cityTag: json['cityTagName']?.toString(),
@@ -92,7 +95,7 @@ class _MainPageScreenState extends State<MainPageScreen> {
           // ⭐ 별점 비교: '별5개' vs post.ratingTag('5') → 변환 필요
           if (_selectedTags['별점'] != null) {
             final selected = _selectedTags['별점'];
-            final actual = post.ratingTag != null ? '별${post.ratingTag}' : null;
+            final actual = post.ratingTag != null ? '${post.ratingTag}' : null;
             if (actual != selected) match = false;
           }
 
@@ -208,9 +211,11 @@ class _MainPageScreenState extends State<MainPageScreen> {
                             width: imageWidth,
                             height: imageHeight,
                             color: Colors.white,
-                            child: Image.network(
-                              post.imageUrl,
+                            child: CachedNetworkImage(
+                              imageUrl: post.thumbnailUrl ?? post.imageUrl,
                               fit: BoxFit.fitWidth,
+                              placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                              errorWidget: (context, url, error) => const Icon(Icons.error),
                             ),
                           ),
                         );

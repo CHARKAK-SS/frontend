@@ -63,7 +63,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             if (shutterSpeed.isNotEmpty) '1/${shutterSpeed}s', // s 단위 추가
             if (iso.isNotEmpty) 'ISO$iso', // ISO 추가
           ].join(' | ');
-          final String weather = post['wearther'] ?? '';
+          final String weather = post['weather'] ?? '';
           final String imageUrl = post['imageUrl'] ?? '';
           final String content = post['text'] ?? '';
 
