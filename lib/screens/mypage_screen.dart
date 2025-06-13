@@ -26,7 +26,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserDataAndCalendar(); // 통합 처리
+    _loadUserDataAndCalendar();
   }
 
   Future<void> _loadUserDataAndCalendar() async {
@@ -335,7 +335,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
         crossAxisCount: 7,
         crossAxisSpacing: 2,
         mainAxisSpacing: 2,
-        childAspectRatio: 0.5, // 사진 비율 설정
+        childAspectRatio: 0.5,
       ),
       itemCount: totalCells,
       itemBuilder: (context, index) {
@@ -381,7 +381,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     children: [
                       const SizedBox(height: 15),
                       Container(
-                        width: double.infinity, // 날짜 칸 전체 너비에 맞춤
+                        width: double.infinity,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 4,
                           vertical: 2,
@@ -433,7 +433,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 날짜 표시
                 Row(
                   children: [
                     const Icon(Icons.calendar_today),
@@ -449,7 +448,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // 장소 입력
                 Row(
                   children: [
                     const Icon(Icons.location_on),
@@ -468,7 +466,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
 
                 const Spacer(),
 
-                // 저장 버튼
                 Align(
                   alignment: Alignment.center,
                   child: ElevatedButton(
@@ -538,7 +535,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 날짜 표시
                     Row(
                       children: [
                         const Icon(Icons.calendar_today),
@@ -554,7 +550,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // 장소 입력
                     Row(
                       children: [
                         const Icon(Icons.location_on),
@@ -572,7 +567,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     ),
                     const Divider(height: 20),
 
-                    // 사진 업로드
                     GestureDetector(
                       onTap: () async {
                         final picker = ImagePicker();
@@ -603,8 +597,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     ),
 
                     const Divider(height: 20),
-
-                    // 일기 작성
+                    
                     TextField(
                       controller: contentController,
                       maxLines: 5,
@@ -615,7 +608,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 저장 버튼
                     Align(
                       alignment: Alignment.center,
                       child: ElevatedButton(
@@ -788,7 +780,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        // ✅ 1. 일기 작성된 경우 (image 존재)
         if (data != null &&
             data['image'] != null &&
             data['image'].toString().isNotEmpty) {
@@ -844,7 +835,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
             ),
           );
         }
-        // ✅ 2. 스케줄만 기록된 경우 (title은 있지만 image 없음)
         else if (data != null &&
             data['title'] != null &&
             data['title'].toString().isNotEmpty) {
@@ -916,7 +906,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
             ),
           );
         }
-        // ✅ 3. 아무 기록이 없는 날
         else {
           print("기록 없음");
           return Padding(
