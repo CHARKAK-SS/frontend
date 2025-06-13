@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:charkak/services/auth_service.dart';
 import 'mainpage_screen.dart';
-import 'register_screen.dart'; // ✅ 회원가입 화면 import
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,7 +71,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 30),
 
-              // ✅ 회원가입 텍스트
               Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
