@@ -32,7 +32,6 @@ class _MainPageScreenState extends State<MainPageScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print("❌ 게시물 불러오기 오류: $e");
       setState(() => _isLoading = false);
     }
   }
