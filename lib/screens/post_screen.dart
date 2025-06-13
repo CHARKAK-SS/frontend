@@ -47,7 +47,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   List<Spot> spots = [];
   bool noResults = false;
 
-  // 🔥 카메라 정보 입력값 저장 변수 추가
   String? cameraModel, lens, aperture, shutterSpeed, iso;
 
   Future<void> _selectDate(BuildContext context) async {
@@ -285,14 +284,12 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
           actions: [
             ElevatedButton(
               onPressed: () {
-                // 🔥 입력값 변수에 저장 (DB에 분리 저장)
                 setState(() {
                   cameraModel = modelCtrl.text;
                   lens = focalCtrl.text;
                   aperture = apertureCtrl.text;
                   shutterSpeed = shutterCtrl.text;
                   iso = isoCtrl.text;
-                  // 🔥 UI에 표시할 요약 문자열
                   _cameraController.text = [
                     if (cameraModel != null && cameraModel!.isNotEmpty)
                       cameraModel,
@@ -426,7 +423,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      print('🔑 저장된 토큰: $token');
 
       if (token == null) {
         ScaffoldMessenger.of(
@@ -435,9 +431,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         return;
       }
 
-      // 🔥 유저 ID 가져오기 (fetchID 사용)
       final userId = await AuthService.fetchID();
-      print('👤 유저 ID: $userId');
       if (userId == null) {
         ScaffoldMessenger.of(
           context,
@@ -445,7 +439,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         return;
       }
 
-      // ✅ 이미지 선택 여부 확인
       if (selectedImage == null) {
         ScaffoldMessenger.of(
           context,
@@ -453,7 +446,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         return;
       }
 
-      // ✅ 이미지 S3 업로드
       final imageUrl = await PostService.uploadImageToS3(selectedImage!);
       if (imageUrl == null) {
         ScaffoldMessenger.of(
@@ -462,7 +454,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         return;
       }
 
-      // 🔥 입력값 유효성 검사 추가
       if (_placeController.text.trim().isEmpty ||
           _dateTimeController.text.trim().isEmpty ||
           (cameraModel == null || cameraModel!.isEmpty) ||
@@ -508,8 +499,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         "targetTagName": selectedTagMap['대상'] ?? "",
       };
 
-      print('📦 전송할 데이터: $postData');
-
       var postResponse = await http.post(
         Uri.parse('http://10.0.2.2:8080/api/posts'),
         headers: {
@@ -518,9 +507,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         },
         body: jsonEncode(postData),
       );
-
-      print('🌐 게시 응답 코드: ${postResponse.statusCode}');
-      print('🌐 게시 응답 바디: ${postResponse.body}');
 
       if (postResponse.statusCode == 200) {
         ScaffoldMessenger.of(
@@ -533,7 +519,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         );
       }
     } catch (e) {
-      print('🚨 오류 발생: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('네트워크 오류: $e')));
@@ -555,14 +540,13 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         onTap: onTap,
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.black),
-          hintText: hint, // 🪄 hintText 지정
-          border: UnderlineInputBorder(), // ✅ Underline 추가!
+          hintText: hint,
+          border: UnderlineInputBorder(),
         ),
       ),
     );
   }
 
-  // 🔥 수정된 부분: 날씨 입력란 우측 버튼 포함 함수 추가
   Widget buildUnderlineTextFieldWithButton(
     IconData icon,
     String hint,
@@ -591,7 +575,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     );
   }
 
-  // 🔥 수정된 부분: 날씨 자동입력 로직 추가
   Future<void> _fetchWeatherAndFillTemperature() async {
     final address = _selectedAddress ?? _placeController.text.trim();
     final dateTimeInput = _dateTimeController.text.trim();
@@ -615,18 +598,12 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       final date = DateFormat('yyyyMMdd').format(parsedDate);
       final time = DateFormat('HH00').format(parsedDate);
 
-      print('🌐 자동입력: 장소명: ${_placeController.text}');
-      print('🌐 자동입력: 주소: $address');
-      print('🌐 자동입력: 요청 시간: $date $time');
-
       final result = await LocationService.fetchWeather(address, date, time);
-      print('🌐 자동입력: 날씨 응답: $result');
 
       setState(() {
         _temperatureController.text = result.replaceAll('\n', ' ');
       });
     } catch (e) {
-      print('🚨 자동입력 오류: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('날씨 자동 입력 오류: $e')));
