@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'spotsearch_screen.dart';
@@ -627,7 +628,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                                       32,
                                       24,
                                       8,
-                                    ), // 위쪽 여백 늘림
+                                    ),
                                     content: const Text(
                                       "사진과 장소를 입력하세요.",
                                       textAlign: TextAlign.center,
