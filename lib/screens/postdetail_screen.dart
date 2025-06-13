@@ -34,7 +34,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('❌ 에러 발생: \${snapshot.error}'));
+            return Center(child: Text('에러 발생: \${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data == null) {
             return const Center(child: Text('게시글을 불러올 수 없습니다.'));
           }
@@ -49,7 +49,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           final String imageUrl = post['imageUrl'];
           final String content = post['text'];
 
-          // 태그는 추후 확장 가능 (예: post['tags']가 있다면 List<String>.from(...))
           final List<String> tags = [];
 
           return Padding(
