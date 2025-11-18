@@ -29,13 +29,8 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   final TextEditingController _addressController = TextEditingController();
 
   File? selectedImage;
-  List<String> starTags = ['별1개', '별2개', '별3개', '별4개', '별5개'];
-  List<String> countryTags = ['국내', '국외'];
-  final Map<String, List<String>> cityOptions = {
-    '국내': ['서울', '대구', '대전', '부산', '인천', '광주', '천안', '원주', '구미', '세종', '경주'],
-    '국외': ['미국', '캐나다', '영국', '독일', '스페인', '일본', '중국', '베트남', '태국'],
-  };
-  List<String> subjectTags = ['인물', '풍경', '사물', '동물', '야경'];
+  Map<String, List<dynamic>> _dynamicTagOptions = {};
+  bool _tagsLoading = true;
 
   Map<String, String?> selectedTagMap = {
     '별점': null,
@@ -50,8 +45,29 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
   List<Spot> spots = [];
   bool noResults = false;
 
-  // 🔥 카메라 정보 입력값 저장 변수 추가
   String? cameraModel, lens, aperture, shutterSpeed, iso;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAllTags();
+  }
+
+  Future<void> _loadAllTags() async {
+    try {
+      final tagMap = await PostService.fetchTagsByCategory();
+      
+      setState(() {
+        _dynamicTagOptions = tagMap;
+        _tagsLoading = false;
+      });
+    } catch (e) {
+      print('태그 데이터 로드 실패: $e');
+      setState(() {
+        _tagsLoading = false;
+      });
+    }
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final pickedDate = await showDatePicker(
@@ -198,24 +214,29 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                   controller: _nameController,
                   decoration: const InputDecoration(labelText: '장소명'),
                 ),
-                GestureDetector(
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SearchPostcodePage(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _addressController,
+                        decoration: const InputDecoration(hintText: '주소를 입력하세요'),
                       ),
-                    );
-                    if (result != null && result is String) {
-                      setState(() => _addressController.text = result);
-                    }
-                  },
-                  child: AbsorbPointer(
-                    child: TextField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(hintText: '주소를 검색하세요'),
                     ),
-                  ),
+                    IconButton(
+                      icon: const Icon(Icons.search),
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SearchPostcodePage(),
+                          ),
+                        );
+                        if (result != null && result is String) {
+                          setState(() => _addressController.text = result); 
+                        }
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
@@ -225,7 +246,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
                   onPressed: () async {
                     final name = _nameController.text.trim();
                     final address = _addressController.text.trim();
-                    if (name.isNotEmpty && address.isNotEmpty) {
+                    if (name.isNotEmpty) {
                       final success = await SpotSearchService.addSpot(
                         name,
                         address,
@@ -297,14 +318,12 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
           actions: [
             ElevatedButton(
               onPressed: () {
-                // 🔥 입력값 변수에 저장 (DB에 분리 저장)
                 setState(() {
                   cameraModel = modelCtrl.text;
                   lens = focalCtrl.text;
                   aperture = apertureCtrl.text;
                   shutterSpeed = shutterCtrl.text;
                   iso = isoCtrl.text;
-                  // 🔥 UI에 표시할 요약 문자열
                   _cameraController.text = [
                     if (cameraModel != null && cameraModel!.isNotEmpty)
                       cameraModel,
@@ -326,34 +345,53 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     );
   }
 
-  // country 선택 시 선택된 도시를 초기화하고 옵션 동적 반영
   Widget buildTagDropdown(String label, List<String> items) {
-    // 🔥 country 옵션일 경우 동적 반영
+    String categoryKey = '';
+    if (label == '별점') {
+      categoryKey = 'rating';
+    } else if (label == '국가') {
+      categoryKey = 'country';
+    } else if (label == '도시') {
+      categoryKey = 'city';
+    } else if (label == '대상') {
+      categoryKey = 'target';
+    }
+
+    List<dynamic> tagDtos = _dynamicTagOptions[categoryKey] ?? [];
+    List<String> options = tagDtos.map((tagDto) => tagDto['name'].toString()).toList();
+
     if (label == '도시') {
       final selectedCountry = selectedTagMap['국가'];
-      items =
-          selectedCountry != null
-              ? cityOptions[selectedCountry] ?? []
-              : ['국가 선택 후 도시 선택']; // 기본값 표시
+      
+      if (selectedCountry != null) {
+        options = tagDtos
+            .where((tagDto) => tagDto['country'] == selectedCountry)
+            .map((tagDto) => tagDto['name'].toString())
+            .toList();
+            
+        if (options.isEmpty) {
+          options = ['선택 가능한 도시 없음'];
+        }
+      } else {
+        options = ['국가 선택 후 도시 선택'];
+      }
     }
+
 
     return PopupMenuButton<String>(
       color: Colors.white,
-      offset: Offset(0, 40),
+      offset: const Offset(0, 40),
       onSelected: (value) {
         setState(() {
           selectedTagMap[label] = value;
           if (label == '국가') {
-            // 🔥 국가 변경 시 도시 초기화
             selectedTagMap['도시'] = null;
           }
         });
       },
       itemBuilder:
           (_) =>
-              items
-                  .map((e) => PopupMenuItem(value: e, child: Text(e)))
-                  .toList(),
+              options.map((e) => PopupMenuItem(value: e, child: Text(e))).toList(),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         margin: const EdgeInsets.only(right: 8),
@@ -381,9 +419,11 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
+      body: _tagsLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
         padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
           child: Column(
@@ -418,10 +458,10 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  buildTagDropdown('별점', starTags),
-                  buildTagDropdown('국가', countryTags),
-                  buildTagDropdown('도시', []), // 🔥 수정
-                  buildTagDropdown('대상', subjectTags),
+                  buildTagDropdown('별점', []),
+                  buildTagDropdown('국가', []),
+                  buildTagDropdown('도시', []),
+                  buildTagDropdown('대상', []),
                 ],
               ),
               const SizedBox(height: 20),
@@ -490,7 +530,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      print('🔑 저장된 토큰: $token');
 
       if (token == null) {
         ScaffoldMessenger.of(
@@ -499,9 +538,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         return;
       }
 
-      // 🔥 유저 ID 가져오기 (fetchID 사용)
       final userId = await AuthService.fetchID();
-      print('👤 유저 ID: $userId');
       if (userId == null) {
         ScaffoldMessenger.of(
           context,
@@ -509,7 +546,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         return;
       }
 
-      // ✅ 이미지 선택 여부 확인
       if (selectedImage == null) {
         ScaffoldMessenger.of(
           context,
@@ -517,16 +553,18 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         return;
       }
 
-      // ✅ 이미지 S3 업로드
-      final imageUrl = await PostService.uploadImageToS3(selectedImage!);
-      if (imageUrl == null) {
+      final urlMap = await PostService.uploadImageToS3(selectedImage!); 
+      
+      if (urlMap == null) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('이미지 업로드에 실패했습니다')));
+        ).showSnackBar(SnackBar(content: Text('이미지 업로드 실패')));
         return;
       }
 
-      // 🔥 입력값 유효성 검사 추가
+      final imageUrl = urlMap["imageUrl"];
+      final thumbnailUrl = urlMap["thumbnailUrl"];
+
       if (_placeController.text.trim().isEmpty ||
           _dateTimeController.text.trim().isEmpty ||
           (cameraModel == null || cameraModel!.isEmpty) ||
@@ -564,6 +602,7 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         "iso": iso ?? "",
         "weather": _temperatureController.text,
         "imageUrl": imageUrl,
+        "thumbnailUrl": thumbnailUrl,
         "text": _contentController.text,
         "userId": userId,
         "ratingTagName": selectedTagMap['별점'] ?? "",
@@ -572,7 +611,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         "targetTagName": selectedTagMap['대상'] ?? "",
       };
 
-      print('📦 전송할 데이터: $postData');
 
       var postResponse = await http.post(
         Uri.parse('http://10.0.2.2:8080/api/posts'),
@@ -583,10 +621,8 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         body: jsonEncode(postData),
       );
 
-      print('🌐 게시 응답 코드: ${postResponse.statusCode}');
-      print('🌐 게시 응답 바디: ${postResponse.body}');
 
-      if (postResponse.statusCode == 200) {
+      if (postResponse.statusCode == 200 || postResponse.statusCode == 201) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('게시 성공!')));
@@ -597,7 +633,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         );
       }
     } catch (e) {
-      print('🚨 오류 발생: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('네트워크 오류: $e')));
@@ -619,14 +654,13 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
         onTap: onTap,
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.black),
-          hintText: hint, // 🪄 hintText 지정
-          border: UnderlineInputBorder(), // ✅ Underline 추가!
+          hintText: hint,
+          border: UnderlineInputBorder(),
         ),
       ),
     );
   }
 
-  // 🔥 수정된 부분: 날씨 입력란 우측 버튼 포함 함수 추가
   Widget buildUnderlineTextFieldWithButton(
     IconData icon,
     String hint,
@@ -655,7 +689,6 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
     );
   }
 
-  // 🔥 수정된 부분: 날씨 자동입력 로직 추가
   Future<void> _fetchWeatherAndFillTemperature() async {
     final address = _selectedAddress ?? _placeController.text.trim();
     final dateTimeInput = _dateTimeController.text.trim();
@@ -678,19 +711,12 @@ class _PostWriteScreenState extends State<PostWriteScreen> {
       }
       final date = DateFormat('yyyyMMdd').format(parsedDate);
       final time = DateFormat('HH00').format(parsedDate);
-
-      print('🌐 자동입력: 장소명: ${_placeController.text}');
-      print('🌐 자동입력: 주소: $address');
-      print('🌐 자동입력: 요청 시간: $date $time');
-
       final result = await LocationService.fetchWeather(address, date, time);
-      print('🌐 자동입력: 날씨 응답: $result');
 
       setState(() {
         _temperatureController.text = result.replaceAll('\n', ' ');
       });
     } catch (e) {
-      print('🚨 자동입력 오류: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('날씨 자동 입력 오류: $e')));

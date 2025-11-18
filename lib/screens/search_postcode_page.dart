@@ -1,5 +1,3 @@
-// lib/screens/search_postcode_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:daum_postcode_view/daum_postcode_view.dart';
 
@@ -13,7 +11,7 @@ class SearchPostcodePage extends StatelessWidget {
     return Scaffold(
       body: DaumPostcodeView(
         onComplete: (model) {
-          Navigator.of(context).pop(model.address); // ✅ address만 넘김
+          Navigator.of(context).pop(model.address); 
         },
         options: const DaumPostcodeOptions(
           animation: true,

@@ -35,7 +35,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('❌ 에러 발생: ${snapshot.error}'));
+            return Center(child: Text('에러 발생: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data == null) {
             return const Center(child: Text('게시글을 불러올 수 없습니다.'));
           }
@@ -58,10 +58,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           final String iso = post['iso'] ?? '';
           final String cameraInfo = [
             if (camera.isNotEmpty) camera,
-            if (lens.isNotEmpty) '${lens}mm', // mm 단위 추가
-            if (aperture.isNotEmpty) 'F$aperture', // F 단위 추가
-            if (shutterSpeed.isNotEmpty) '1/${shutterSpeed}s', // s 단위 추가
-            if (iso.isNotEmpty) 'ISO$iso', // ISO 추가
+            if (lens.isNotEmpty) '${lens}mm',
+            if (aperture.isNotEmpty) 'F$aperture', 
+            if (shutterSpeed.isNotEmpty) '1/${shutterSpeed}s', 
+            if (iso.isNotEmpty) 'ISO$iso',
           ].join(' | ');
           final String weather = post['weather'] ?? '';
           final String imageUrl = post['imageUrl'] ?? '';

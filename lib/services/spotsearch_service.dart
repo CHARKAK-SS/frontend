@@ -35,13 +35,12 @@ class Spot {
 class SpotSearchService {
   static const String baseUrl = 'http://10.0.2.2:8080';
 
-  // 🔍 키워드로 장소 검색
   static Future<List<Spot>> searchSpots(String keyword) async {
     final url = Uri.parse('$baseUrl/api/spots/search?keyword=$keyword');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final decoded = utf8.decode(response.bodyBytes); // ✅ 올바른 인코딩 방식
+      final decoded = utf8.decode(response.bodyBytes);
       final List<dynamic> jsonList = jsonDecode(decoded);
       return jsonList.map((json) => Spot.fromJson(json)).toList();
     } else {
@@ -49,7 +48,19 @@ class SpotSearchService {
     }
   }
 
-  // ➕ 장소 추가
+  static Future<List<Spot>> fetchRecentSpots({int limit = 5}) async {
+    final url = Uri.parse('$baseUrl/api/spots/recent?limit=$limit');
+    final response = await http.get(url);
+    
+    if (response.statusCode == 200) {
+      final decoded = utf8.decode(response.bodyBytes);
+      final List<dynamic> jsonList = jsonDecode(decoded);
+      return jsonList.map((json) => Spot.fromJson(json)).toList();
+    } else {
+      throw Exception('최근 장소 로드 실패: ${response.statusCode}');
+    }
+  }
+
   static Future<bool> addSpot(String name, String address) async {
     final url = Uri.parse('$baseUrl/api/spots');
     final response = await http.post(
@@ -61,7 +72,7 @@ class SpotSearchService {
     if (response.statusCode == 201) {
       return true;
     } else if (response.statusCode == 409) {
-      return false; // 중복된 장소
+      return false;
     } else {
       throw Exception('장소 추가 실패: ${response.statusCode} ${response.body}');
     }
@@ -82,12 +93,12 @@ class SpotSearchService {
           return data[0]['imageUrl'];
         }
       } else {
-        print('❌ 서버 응답 실패: ${response.statusCode}');
+        print('서버 응답 실패: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ 이미지 불러오기 실패: $e');
+      print('이미지 불러오기 실패: $e');
     }
 
-    return null; // 실패하거나 이미지 없을 경우
+    return null;
   }
 }

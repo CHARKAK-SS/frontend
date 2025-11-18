@@ -18,7 +18,6 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      // 불필요한 접두사 제거
       String token = response.body.trim();
       if (token.startsWith('JWT 토큰:')) {
         token = token.replaceFirst('JWT 토큰:', '').trim();
@@ -67,7 +66,7 @@ class AuthService {
     return response.statusCode == 200;
   }
 
-  // 유저 정보 가져옴
+
   static Future<String?> fetchName() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -98,7 +97,7 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
-      return data['id'].toString(); // 🔥 id를 String으로 반환
+      return data['id'].toString(); 
     } else {
       return null;
     }
@@ -119,7 +118,7 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      return "success"; // 성공
+      return "success";
     } else {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
       return data['message'] ?? '닉네임 수정 실패';
@@ -138,7 +137,7 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
-      return data['username']; // 🔥 username 반환
+      return data['username']; 
     } else {
       return null;
     }

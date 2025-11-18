@@ -8,15 +8,18 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:charkak/services/weather_service.dart';
+import 'package:charkak/services/post_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class Post {
   final int id;
   final String imageUrl;
-  final String? ratingTag, countryTag, cityTag, targetTag;
+  final String? ratingTag, countryTag, cityTag, targetTag, thumbnailUrl;
 
   Post({
     required this.id,
     required this.imageUrl,
+    this.thumbnailUrl,
     this.ratingTag,
     this.countryTag,
     this.cityTag,
@@ -27,6 +30,7 @@ class Post {
     return Post(
       id: json['id'],
       imageUrl: json['imageUrl'],
+      thumbnailUrl: json['thumbnailUrl'],
       ratingTag: json['ratingTagName'],
       countryTag: json['countryTagName'],
       cityTag: json['cityTagName'],
@@ -60,14 +64,15 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
 
   Map<String, String?> selectedTags = {'별점': null, '대상': null};
 
-  final List<String> starTags = ['별1개', '별2개', '별3개', '별4개', '별5개'];
-  final List<String> subjectTags = ['인물', '풍경', '사물', '동물', '야경'];
+  Map<String, List<dynamic>> _dynamicTagOptions = {};
+  bool _tagsLoading = true;
 
   @override
   void initState() {
     super.initState();
     _fetchWeatherAndLocation();
     _fetchPostsByPlace();
+    _loadAllTags();
   }
 
   void _fetchWeatherAndLocation() async {
@@ -98,7 +103,7 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
           allPosts = data.map((item) => Post.fromJson(item)).toList();
-          filteredPosts = List.from(allPosts); // 🔥 초기화 시 전체 출력
+          filteredPosts = List.from(allPosts);
           isLoadingPosts = false;
         });
       } else {
@@ -111,6 +116,22 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
     }
   }
 
+  void _loadAllTags() async {
+    try {
+      final tagMap = await PostService.fetchTagsByCategory();
+      
+      setState(() {
+        _dynamicTagOptions = tagMap;
+        _tagsLoading = false;
+      });
+    } catch (e) {
+      print('태그 데이터 로드 실패: $e');
+      setState(() {
+        _tagsLoading = false;
+      });
+    }
+  }
+
   void _applyTagFilter() async {
     try {
       String url =
@@ -120,19 +141,19 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
       if (selectedTags['대상'] != null)
         url += '&targetTagName=${Uri.encodeComponent(selectedTags['대상']!)}';
 
-      print('🔥 서버 요청 URL: $url');
+      print('URL: $url');
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
           filteredPosts = data.map((item) => Post.fromJson(item)).toList();
         });
-        print('✅ 서버에서 필터링된 게시물 수: ${filteredPosts.length}');
+        print('필터링된 게시물 수: ${filteredPosts.length}');
       } else {
-        print('❌ 서버 응답 실패: ${response.statusCode}');
+        print('서버 응답 실패: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ 태그 필터링 요청 실패: $e');
+      print('태그 필터링 요청 실패: $e');
     }
   }
 
@@ -214,7 +235,7 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
               const Divider(thickness: 1.5, color: Colors.black),
               const SizedBox(height: 10),
               Wrap(
-                spacing: 5, // 태그들 사이 간격 조정
+                spacing: 5,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   GestureDetector(
@@ -238,13 +259,13 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     padding: EdgeInsets.zero,
-                    itemCount: ((filteredPosts.length + 2) ~/ 3) * 3, // 남는 칸 포함
+                    itemCount: ((filteredPosts.length + 2) ~/ 3) * 3, 
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
-                          crossAxisSpacing: 0, // ✅ 간격 1px
+                          crossAxisSpacing: 0, 
                           mainAxisSpacing: 1,
-                          mainAxisExtent: 185, // ✅ 고정된 높이
+                          mainAxisExtent: 185,
                         ),
                     itemBuilder: (context, index) {
                       if (index < filteredPosts.length) {
@@ -261,18 +282,19 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                             );
                           },
                           child: Container(
-                            color: Colors.white, // ✅ 배경 흰색
+                            color: Colors.white, 
                             alignment: Alignment.center,
-                            child: Image.network(
-                              post.imageUrl,
-                              fit: BoxFit.contain, // ✅ 원본 비율 유지
-                              width: double.infinity,
-                              height: double.infinity,
-                            ),
+                            child: CachedNetworkImage( 
+                            imageUrl: post.thumbnailUrl ?? post.imageUrl, 
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                            errorWidget: (context, url, error) => const Icon(Icons.error),
+                          ),
                           ),
                         );
                       } else {
-                        // 빈 칸 처리
                         return Container(color: Colors.white);
                       }
                     },
@@ -321,36 +343,39 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                   const SizedBox(height: 12),
                   _buildFilterChips(
                     '별점',
-                    starTags,
+                    _dynamicTagOptions['rating'] ?? [],
                     tempSelected,
                     setModalState,
                   ),
                   _buildFilterChips(
                     '대상',
-                    subjectTags,
+                    _dynamicTagOptions['target'] ?? [],
                     tempSelected,
                     setModalState,
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        selectedTags = tempSelected;
-                        _applyTagFilter();
-                      });
-                      Navigator.pop(context);
-                    },
-                    child: const Text(
-                      '적용하기',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedTags = tempSelected;
+                            _applyTagFilter();
+                          });
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          '적용하기',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),],),
                 ],
               );
             },
@@ -362,7 +387,7 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
 
   Widget _buildFilterChips(
     String label,
-    List<String> options,
+    List<dynamic> options,
     Map<String, String?> tempSelected,
     StateSetter setModalState,
   ) {
@@ -373,11 +398,14 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
         Wrap(
           spacing: 8,
           children:
-              options.map((option) {
-                final selected = tempSelected[label] == option;
+              options.map((tagDto) {
+                final originalName = tagDto['name'].toString();
+                final display = label == '별점' ? originalName.replaceFirst('별', '') : originalName; 
+                
+                final selected = tempSelected[label] == originalName;
                 return FilterChip(
                   label: Text(
-                    option,
+                    display,
                     style: TextStyle(
                       color: selected ? Colors.white : Colors.black,
                     ),
@@ -385,13 +413,13 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                   selected: selected,
                   onSelected: (bool value) {
                     setModalState(() {
-                      tempSelected[label] = value ? option : null;
+                      tempSelected[label] = value ? originalName : null;
                     });
                   },
                   selectedColor: Colors.black,
                   checkmarkColor: Colors.white,
                   backgroundColor: Colors.white,
-                  side: BorderSide(color: Colors.black, width: 1.5),
+                  side: const BorderSide(color: Colors.black, width: 1.5),
                 );
               }).toList(),
         ),

@@ -27,7 +27,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // 상단 검정 배너
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -56,7 +55,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       const SizedBox(height: 20),
 
-                      // 프로필 이미지
                       const Center(
                         child: CircleAvatar(
                           radius: 50,
@@ -70,7 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 40),
 
-                      // 아이디 + 중복확인
+
                       const Text(
                         '    아이디',
                         style: TextStyle(
@@ -100,9 +98,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               final isAvailable =
                                   await AuthService.isUsernameAvailable(id);
                               if (isAvailable) {
-                                _showMessage('사용 가능한 아이디입니다 ✅');
+                                _showMessage('사용 가능한 아이디입니다');
                               } else {
-                                _showMessage('이미 존재하는 아이디입니다 ❌');
+                                _showMessage('이미 존재하는 아이디입니다');
                               }
                             },
 
@@ -119,7 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: const Text(
                               '중복확인',
                               style: TextStyle(
-                                color: Colors.white, // 글자 색 흰색
+                                color: Colors.white,
                                 fontFamily: 'PretendardRegular',
                               ),
                             ),
@@ -128,7 +126,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // 이름
                       const Text(
                         '    이름',
                         style: TextStyle(
@@ -143,7 +140,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // 비밀번호
+
                       const Text(
                         '    비밀번호',
                         style: TextStyle(
@@ -159,7 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // 비밀번호 확인
+
                       const Text(
                         '    비밀번호 확인',
                         style: TextStyle(
@@ -175,7 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 40),
 
-                      // 회원가입 버튼
+
                       Center(
                         child: ElevatedButton(
                           onPressed: () async {
@@ -204,8 +201,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             );
 
                             if (error == null) {
-                              _showMessage('회원가입 성공! 🎉');
-                              Navigator.pop(context); // 로그인 화면으로 이동
+                              _showMessage('회원가입이 완료되었습니다');
+                              Navigator.pop(context);
                             } else {
                               _showMessage(error);
                             }

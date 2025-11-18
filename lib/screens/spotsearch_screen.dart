@@ -16,9 +16,9 @@ class _SpotSearchScreenState extends State<SpotSearchScreen> {
   int _selectedIndex = 1;
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _nameController =
-      TextEditingController(); // ✅ 장소명
+      TextEditingController(); 
   final TextEditingController _addressController =
-      TextEditingController(); // ✅ 주소
+      TextEditingController(); 
 
   List<Spot> _spots = [];
 
@@ -26,19 +26,37 @@ class _SpotSearchScreenState extends State<SpotSearchScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    _loadInitialSpots(); 
+  }
+
+  Future<void> _loadInitialSpots() async {
+    try {
+      final results = await SpotSearchService.fetchRecentSpots(limit: 5); 
+      final updatedResults = await Future.wait(
+        results.map((spot) async {
+          final imageUrl = await SpotSearchService.fetchFirstImageForPlace(
+            spot.name,
+          );
+          return spot.copyWith(thumbnailUrl: imageUrl);
+        }),
+      );
+      setState(() => _spots = updatedResults);
+    } catch (e) {
+      print('초기 장소 로딩 실패: $e');
+    }
   }
 
   void _onSearchChanged() async {
     final keyword = _searchController.text.trim();
+    
     if (keyword.isEmpty) {
-      setState(() => _spots = []);
+      _loadInitialSpots();
       return;
     }
 
     try {
       final results = await SpotSearchService.searchSpots(keyword);
 
-      // 🔥 대표 이미지 비동기로 붙이기
       final updatedResults = await Future.wait(
         results.map((spot) async {
           final imageUrl = await SpotSearchService.fetchFirstImageForPlace(
@@ -58,7 +76,7 @@ class _SpotSearchScreenState extends State<SpotSearchScreen> {
     _nameController.clear();
     _addressController.clear();
 
-    final parentContext = context; // ✅ 팝업 바깥 context 저장
+    final parentContext = context; 
 
     showModalBottomSheet(
       context: context,
@@ -122,12 +140,11 @@ class _SpotSearchScreenState extends State<SpotSearchScreen> {
                             name,
                             address,
                           );
-                          Navigator.pop(context); // ✅ 먼저 팝업 닫기
+                          Navigator.pop(context); 
 
                           if (success) {
-                            _onSearchChanged(); // ✅ 성공 시 목록 갱신
+                            _loadInitialSpots();
                           } else {
-                            // ✅ 팝업 닫은 후 알림 띄우기 (바깥 context 사용)
                             ScaffoldMessenger.of(parentContext).showSnackBar(
                               const SnackBar(
                                 content: Text(

@@ -4,12 +4,18 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class WeatherService {
-  // 🔥 인증키는 디코딩된 버전을 그대로 넣음 (Encoding 하지 않음)
-  static const String _apiKey = 'decode key';
 
-  // 위도/경도 -> 격자 좌표 변환
+  static String get _apiKey {
+    final key = dotenv.env['KMA_WEATHER_API_KEY'];
+    if (key == null) {
+      throw Exception('KMA_WEATHER_API_KEY environment variable is not set.');
+    }
+    return key;
+  }
+
   static Map<String, int> _convertToGrid(double lat, double lon) {
     const double RE = 6371.00877,
         GRID = 5.0,
@@ -40,15 +46,15 @@ class WeatherService {
     return {'nx': x, 'ny': y};
   }
 
-  // URL 생성 시 Uri.https로 안전하게 인코딩 처리
+
   static String _buildUrl(int nx, int ny, DateTime time) {
-    final baseDate = DateFormat('yyyyMMdd').format(time);
-    final baseTime = DateFormat(
-      'HHmm',
-    ).format(time.subtract(const Duration(hours: 1)));
+    final baseDateTime = time.subtract(const Duration(hours: 1)); //초단기실황으로 1시간전 일시로 변경
+    
+    final baseDate = DateFormat('yyyyMMdd').format(baseDateTime);
+    final baseTime = DateFormat('HHmm').format(baseDateTime);
 
     final query = {
-      'serviceKey': _apiKey, // 🔥 Uri.https가 자동으로 인코딩 처리해줌
+      'serviceKey': _apiKey,
       'numOfRows': '10',
       'pageNo': '1',
       'dataType': 'JSON',
@@ -72,10 +78,17 @@ class WeatherService {
 
       final lat = locations[0].latitude;
       final lon = locations[0].longitude;
+
+      final placemarks = await placemarkFromCoordinates(lat, lon);
+      
+      if (placemarks.isNotEmpty && !(placemarks[0].country ?? '').contains('Korea')) {
+        return '국내 출사지의 현재 날씨만 확인 가능합니다'; 
+      }
+      
       final grid = _convertToGrid(lat, lon);
       final url = _buildUrl(grid['nx']!, grid['ny']!, time);
 
-      print('📡 WeatherService URL: $url');
+      print('WeatherService URL: $url');
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode != 200)
@@ -101,7 +114,7 @@ class WeatherService {
 
       return '$temp°C | $condition';
     } catch (e) {
-      print('❌ WeatherService Error: $e');
+      print('WeatherService Error: $e');
       return '날씨 정보 불러오기 실패';
     }
   }
@@ -123,7 +136,7 @@ class WeatherService {
 
       return {'latlng': LatLng(lat, lon), 'weather': weather};
     } catch (e) {
-      print('❌ WeatherService.fetchWeatherAndLocation Error: $e');
+      print('WeatherService.fetchWeatherAndLocation Error: $e');
       throw Exception('날씨 및 위치 불러오기 실패');
     }
   }

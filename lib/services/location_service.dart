@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
-
-const String googleApiKey = 'google api';
-const String weatherApiKey = 'weather api';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final List<Map<String, dynamic>> observationStations = [
   {'stnId': '108', 'name': '서울', 'lat': 37.5665, 'lon': 126.9780},
@@ -13,13 +11,18 @@ final List<Map<String, dynamic>> observationStations = [
 
 class LocationService {
   static Future<Map<String, double>?> getCoordinates(String address) async {
+    final googleApiKey = dotenv.env['GOOGLE_MAPS_API_KEY'];
+    if (googleApiKey == null) {
+      print('환경변수(GOOGLE_MAPS_API_KEY)를 찾을 수 없음');
+      return null;
+    }
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/geocode/json?address=${Uri.encodeComponent(address)}&key=$googleApiKey',
     );
     final response = await http.get(url);
-    print('📡 요청 URL: $url');
-    print('📡 응답 코드: ${response.statusCode}');
-    print('📡 응답 내용: ${response.body}');
+    print('요청 URL: $url');
+    print('응답 코드: ${response.statusCode}');
+    print('응답 내용: ${response.body}');
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['results'].isNotEmpty) {
@@ -27,7 +30,7 @@ class LocationService {
         return {'lat': location['lat'], 'lon': location['lng']};
       }
     }
-    print('❌ 주소 변환 실패');
+    print('주소 변환 실패');
     return null;
   }
 
@@ -63,52 +66,57 @@ class LocationService {
     String date,
     String time,
   ) async {
+    final weatherApiKey = dotenv.env['WEATHER_API_KEY'];
+    if (weatherApiKey == null) {
+      print('환경변수(WEATHER_API_KEY)를 찾을 수 없.');
+    }
+
     final coordinates = await getCoordinates(address);
     if (coordinates == null) {
-      return '❌ 주소 변환 실패';
+      return '주소 변환 실패';
     }
 
     String stnId = findNearestStation(coordinates['lat']!, coordinates['lon']!);
-    String tm = date + (time.length < 4 ? time.padLeft(4, '0') : time); // 시간 보정
+    String tm = date + (time.length < 4 ? time.padLeft(4, '0') : time); 
 
     final url = Uri.parse(
       'https://apihub.kma.go.kr/api/typ01/url/kma_sfctm2.php'
       '?tm=$tm&stn=$stnId&authKey=$weatherApiKey&help=0',
     );
     final response = await http.get(url);
-    print('📡 요청 URL: $url');
-    print('📡 응답 코드: ${response.statusCode}');
+    print('요청 URL: $url');
+    print('응답 코드: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final data = response.body;
-      print('📡 응답 내용: $data');
+      print('응답 내용: $data');
       final startIndex = data.indexOf('#START7777');
       final endIndex = data.indexOf('#7777END');
       if (startIndex != -1 && endIndex != -1) {
         final content =
             data.substring(startIndex + '#START7777'.length, endIndex).trim();
-        print('📌 파싱된 데이터: $content');
+
         final lines = content.split('\n');
         if (lines.length >= 2) {
-          // 브라우저 데이터 기준으로 헤더 컬럼 인덱스 지정
+
           final headerIndex = {
-            'TA': 11, // 기온 (섭씨)
-            'WP': 23, // GTS 과거일기
-            'WW': 24, // 국내식 일기코드
+            'TA': 11, 
+            'WP': 23, 
+            'WW': 24, 
           };
           final values =
               lines.last
                   .split(RegExp(r'\s+'))
                   .where((v) => v.isNotEmpty)
                   .toList();
-          print('📌 파싱된 값: $values');
+
 
           String temperature =
               values.length > headerIndex['TA']!
                   ? '${values[headerIndex['TA']!]}°C'
                   : '정보 없음';
 
-          // WP를 기준으로 판단: -9는 맑음, 끝자리가 3~9는 해당 기상코드
+
           String weather = '맑음';
           if (values.length > headerIndex['WP']!) {
             String wp = values[headerIndex['WP']!];
@@ -130,12 +138,12 @@ class LocationService {
 
           return '$temperature | $weather';
         } else {
-          return '❌ 데이터 파싱 실패: 줄이 부족함';
+          return '데이터 파싱 실패: 줄이 부족함';
         }
       } else {
-        return '❌ START/END 구간 없음';
+        return 'START/END 구간 없음';
       }
     }
-    return '❌ 날씨 조회 실패: ${response.statusCode}';
+    return '=====날씨 조회 실패: ${response.statusCode}=====';
   }
 }

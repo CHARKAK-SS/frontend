@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:charkak/services/auth_service.dart';
 import 'package:charkak/services/calendar_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MYpageScreen extends StatefulWidget {
   const MYpageScreen({super.key});
@@ -26,7 +27,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserDataAndCalendar(); // 통합 처리
+    _loadUserDataAndCalendar();
   }
 
   Future<void> _loadUserDataAndCalendar() async {
@@ -50,7 +51,8 @@ class _MYpageScreenState extends State<MYpageScreen> {
             ).format(DateTime.parse(date));
 
             _calendarData[formattedDate] = {
-              'image': item['imageUrl'],
+              'image': item['thumbnailUrl'] ?? item['imageUrl'], 
+              'fullImage': item['imageUrl'],
               'title': item['location'],
               'content': item['diaryText'],
             };
@@ -335,7 +337,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
         crossAxisCount: 7,
         crossAxisSpacing: 2,
         mainAxisSpacing: 2,
-        childAspectRatio: 0.5, // 사진 비율 설정
+        childAspectRatio: 0.5,
       ),
       itemCount: totalCells,
       itemBuilder: (context, index) {
@@ -365,13 +367,11 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     data['image'] != null &&
                     data['image'].toString().isNotEmpty)
                   Expanded(
-                    child: Image.network(
-                      data['image'],
-                      fit: BoxFit.fitWidth,
-                      filterQuality: FilterQuality.low,
-                      errorBuilder:
-                          (context, error, stackTrace) =>
-                              const Icon(Icons.image_not_supported),
+                    child: CachedNetworkImage( 
+                      imageUrl: data['image'], 
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      errorWidget: (context, url, error) => const Icon(Icons.image_not_supported),
                     ),
                   )
                 else if (data != null &&
@@ -381,7 +381,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     children: [
                       const SizedBox(height: 15),
                       Container(
-                        width: double.infinity, // 날짜 칸 전체 너비에 맞춤
+                        width: double.infinity,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 4,
                           vertical: 2,
@@ -433,7 +433,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 날짜 표시
                 Row(
                   children: [
                     const Icon(Icons.calendar_today),
@@ -449,7 +448,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // 장소 입력
+
                 Row(
                   children: [
                     const Icon(Icons.location_on),
@@ -468,18 +467,20 @@ class _MYpageScreenState extends State<MYpageScreen> {
 
                 const Spacer(),
 
-                // 저장 버튼
+
                 Align(
                   alignment: Alignment.center,
                   child: ElevatedButton(
                     onPressed: () async {
                       if (locationController.text.isEmpty || _userId == null)
                         return;
+                      
                       final success = await CalendarService.saveCalendar(
                         location: locationController.text,
                         diaryText: '',
                         date: selectedDate,
                         imageUrl: '',
+                        thumbnailUrl: '', 
                         userName: _userId!,
                       );
                       if (success) {
@@ -538,7 +539,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 날짜 표시
+
                     Row(
                       children: [
                         const Icon(Icons.calendar_today),
@@ -554,7 +555,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // 장소 입력
+
                     Row(
                       children: [
                         const Icon(Icons.location_on),
@@ -572,7 +573,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     ),
                     const Divider(height: 20),
 
-                    // 사진 업로드
                     GestureDetector(
                       onTap: () async {
                         final picker = ImagePicker();
@@ -604,7 +604,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
 
                     const Divider(height: 20),
 
-                    // 일기 작성
+
                     TextField(
                       controller: contentController,
                       maxLines: 5,
@@ -615,7 +615,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 저장 버튼
+
                     Align(
                       alignment: Alignment.center,
                       child: ElevatedButton(
@@ -635,7 +635,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                                       32,
                                       24,
                                       8,
-                                    ), // 위쪽 여백 늘림
+                                    ),
                                     content: const Text(
                                       "사진과 장소를 입력하세요.",
                                       textAlign: TextAlign.center,
@@ -678,10 +678,12 @@ class _MYpageScreenState extends State<MYpageScreen> {
                             return;
                           }
 
-                          final imageUrl = await CalendarService.uploadImage(
+                         
+                          final urlMap = await CalendarService.uploadImage(
                             selectedImage!,
                           );
-                          if (imageUrl == null) {
+                          
+                          if (urlMap == null) {
                             showDialog(
                               context: context,
                               builder:
@@ -708,12 +710,17 @@ class _MYpageScreenState extends State<MYpageScreen> {
                             );
                             return;
                           }
+                          
+                          final imageUrl = urlMap['imageUrl']!;
+                          final thumbnailUrl = urlMap['thumbnailUrl']!;
+
 
                           final success = await CalendarService.saveCalendar(
                             location: locationController.text,
                             diaryText: contentController.text,
                             date: selectedDate,
-                            imageUrl: imageUrl,
+                            imageUrl: imageUrl, 
+                            thumbnailUrl: thumbnailUrl, 
                             userName: _userId!,
                           );
 
@@ -723,7 +730,8 @@ class _MYpageScreenState extends State<MYpageScreen> {
                             ).format(selectedDate);
                             setState(() {
                               _calendarData[key] = {
-                                'image': imageUrl,
+                                'image': thumbnailUrl, 
+                                'fullImage': imageUrl, 
                                 'title': locationController.text,
                                 'content': contentController.text,
                               };
@@ -788,7 +796,6 @@ class _MYpageScreenState extends State<MYpageScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        // ✅ 1. 일기 작성된 경우 (image 존재)
         if (data != null &&
             data['image'] != null &&
             data['image'].toString().isNotEmpty) {
@@ -826,7 +833,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
                     ],
                   ),
                   const Divider(height: 20),
-                  Center(child: Image.network(data['image'], height: 300)),
+                  Center(child: Image.network(data['fullImage'] ?? data['image'], height: 300)),
                   const Divider(height: 20),
                   Expanded(
                     child: SingleChildScrollView(
@@ -844,7 +851,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
             ),
           );
         }
-        // ✅ 2. 스케줄만 기록된 경우 (title은 있지만 image 없음)
+
         else if (data != null &&
             data['title'] != null &&
             data['title'].toString().isNotEmpty) {
@@ -916,7 +923,7 @@ class _MYpageScreenState extends State<MYpageScreen> {
             ),
           );
         }
-        // ✅ 3. 아무 기록이 없는 날
+
         else {
           print("기록 없음");
           return Padding(

@@ -1,3 +1,7 @@
+rootProject.extra.set("minSdkVersion", 21)
+rootProject.extra.set("compileSdkVersion", 34) // Android 14 (API 34) 권장
+rootProject.extra.set("targetSdkVersion", 34)
+
 allprojects {
     repositories {
         google()
