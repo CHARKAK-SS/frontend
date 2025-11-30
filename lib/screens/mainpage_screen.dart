@@ -5,6 +5,7 @@ import 'mypage_screen.dart';
 import 'post_screen.dart';
 import 'package:charkak/services/post_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:math';
 
 class Post {
   final int id;
@@ -71,6 +72,9 @@ class _MainPageScreenState extends State<MainPageScreen> {
   
   final int _initStartTime = DateTime.now().millisecondsSinceEpoch; 
   bool _isInitialLoadLogged = false; 
+  
+  // ★ 이미지 로딩 시간 통계를 위한 Map<Post ID, Load Time (ms)> 사용
+  final Map<int, int> _imageLoadTimesMap = {}; 
 
   @override
   void initState() {
@@ -87,6 +91,70 @@ class _MainPageScreenState extends State<MainPageScreen> {
     super.dispose();
   }
   
+  // ★ Map 기반 통계 계산 및 출력 함수
+  void _logImageLoadStatistics() {
+      final List<int> times = _imageLoadTimesMap.values.toList();
+      
+      if (times.isEmpty) {
+          print("--- [IMAGE LOAD STATISTICS] ---");
+          print("로딩된 이미지가 없어 통계를 계산할 수 없습니다.");
+          print("-------------------------------");
+          return;
+      }
+      
+      // 1. 정렬
+      times.sort(); // 통계를 위해 정렬
+
+      // 2. 계산
+      final min = times.first;
+      final max = times.last;
+      final sum = times.reduce((a, b) => a + b);
+      final avg = sum / times.length;
+      
+      // 3. 중앙값 (Median) 계산
+      final double median;
+      final int middleIndex = times.length ~/ 2;
+      
+      if (times.length % 2 == 1) {
+          median = times[middleIndex].toDouble();
+      } else {
+          final middleRight = times[middleIndex];
+          final middleLeft = times[middleIndex - 1];
+          median = (middleLeft + middleRight) / 2.0;
+      }
+      
+      // 4. 뷰 상태 확인
+      final viewMode = _isShowingRecommended ? "추천 게시글 (Recommended)" : "전체 게시글 (All Posts)";
+
+
+      // 5. 출력
+      print("=================[IMAGE LOAD STATISTICS]=================");
+      print("[View Mode] $viewMode"); 
+      print("[Total Images] ${times.length}개");
+      print("[Time Unit] milliseconds (ms)");
+      print("===================================================");
+      print("Max: ${max.toStringAsFixed(2)} ms");
+      print("Min: ${min.toStringAsFixed(2)} ms");
+      print("Average: ${avg.toStringAsFixed(2)} ms");
+      print("Median: ${median.toStringAsFixed(2)} ms");
+      print("===================================================\n");
+      
+      // 개별 이미지 로딩 시간 출력 (문제 추적에 도움)
+      print("--- [Individual Load Times (ID: Time)] ---");
+      _imageLoadTimesMap.forEach((id, time) {
+          print("Post ID $id: ${time.toStringAsFixed(2)} ms");
+      });
+      print("------------------------------------------");
+  }
+
+  // ★ Map 기반 통계 리셋 및 출력 로직
+  void _resetAndLogStatistics() {
+      if (_imageLoadTimesMap.isNotEmpty) {
+          _logImageLoadStatistics(); // 이전 통계 출력
+      }
+      _imageLoadTimesMap.clear();    // 맵 초기화
+  }
+
   void _scrollListener() {
     if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent && !_isFetchingMore && _hasMorePosts && !_selectedTags.values.any((tag) => tag != null) && _isShowingRecommended) {
       _loadRecommendedPosts(isInitialLoad: false);
@@ -109,10 +177,8 @@ class _MainPageScreenState extends State<MainPageScreen> {
   }
 
   Future<void> _loadAllPosts() async {
-    print("============_loadallpost 실행==============");
     try {
       final postsJson = await PostService.fetchPosts(); 
-      print("============fetchPost 호출 완. (성공)==============");
       final allPosts = postsJson.map<Post>((json) => Post.fromJson(json)).toList();
       
       if (!mounted) return;
@@ -124,6 +190,12 @@ class _MainPageScreenState extends State<MainPageScreen> {
         // 전체 게시글 모드인 경우 즉시 화면 갱신
         if (!_isShowingRecommended && !_selectedTags.values.any((tag) => tag != null)) {
              _filteredPosts = List.from(_allPostsForFiltering);
+        }
+        
+        // ★ 추가: 통계 리셋 및 로그 (전체 게시글 로드 완료 시)
+        // 전체 게시글 모드일 경우 무조건 로드 완료 시 통계 출력 (초기 로딩 포함)
+        if (!_isShowingRecommended && !_selectedTags.values.any((tag) => tag != null)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) => _resetAndLogStatistics());
         }
       });
     } catch (e) {
@@ -187,6 +259,12 @@ class _MainPageScreenState extends State<MainPageScreen> {
         _isLoading = false; 
         
         _isFetchingMore = false;
+        
+        // ★ 추가: 초기 로딩 완료 후 통계 리셋 및 로그
+        // 추천 게시글 모드일 경우 초기 로딩 완료 시 통계 출력
+        if (isInitialLoad && _isShowingRecommended && !_selectedTags.values.any((tag) => tag != null)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) => _resetAndLogStatistics());
+        }
       });
       
       if (_selectedTags.values.any((tag) => tag != null)) {
@@ -268,6 +346,11 @@ class _MainPageScreenState extends State<MainPageScreen> {
       if (isTagSelected || !_isShowingRecommended) {
         _hasMorePosts = false;
       }
+      
+      // ★ 추가: 태그 필터 적용 완료 후 통계 리셋 및 로그
+      if (isTagSelected) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _resetAndLogStatistics());
+      }
     });
   }
 
@@ -292,6 +375,9 @@ class _MainPageScreenState extends State<MainPageScreen> {
                 ? List.from(_recommendedPosts)
                 : List.from(_allPostsForFiltering); 
             _hasMorePosts = isRecommended;
+            
+            // ★ 추가: 뷰 토글 완료 후 통계 리셋 및 로그
+            WidgetsBinding.instance.addPostFrameCallback((_) => _resetAndLogStatistics());
         });
     } else {
         _applyTagFilter();
@@ -331,10 +417,9 @@ class _MainPageScreenState extends State<MainPageScreen> {
     );
   }
 
-  // ★ 수정된 함수: UX 최적화 (로컬 업데이트) 적용 및 측정
+  // ★ 수정된 함수: 디버깅 로그 추가 및 UX 최적화 측정 제거 (이전 요청 반영)
   Future<void> _navigateToPostWrite() async {
     // PostWriteScreen으로 이동 (await 완료 시, DB 저장 및 LLM 분석은 이미 완료됨)
-    // PostWriteScreen은 이제 Post 객체를 반환해야 합니다.
     final newPostDto = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -342,14 +427,17 @@ class _MainPageScreenState extends State<MainPageScreen> {
       ),
     );
 
-    // ★ 1. 순수 갱신 측정 시작 시점 기록
-    final startTime = DateTime.now(); 
     
     // PostWriteScreen 복귀 후 처리
     if (newPostDto != null && newPostDto is Post) { // DTO 반환이 성공했을 경우 (PostWriteScreen에서 Post 객체를 반환하도록 가정)
       
       // 2. Front-End Driven Optimization: DB 재호출 없이 로컬 리스트 업데이트
       
+      // ===== [디버깅 로그] =====
+      print("--- [DEBUG] newPostDto 반환 성공. 로컬 리스트 갱신 시작 ---");
+      print("갱신 전 _allPostsForFiltering 갯수: ${_allPostsForFiltering.length}");
+      // =======================
+
       setState(() {
           // A. 새 게시글을 로컬 리스트에 추가 (즉시 갱신)
           _allPostsForFiltering.insert(0, newPostDto); 
@@ -366,40 +454,30 @@ class _MainPageScreenState extends State<MainPageScreen> {
           }
       });
       
-      // 3. 백엔드 캐시 갱신을 트리거합니다. (9초 Latency가 여기서 발생)
-      // 이 호출은 DB 재조회를 유발하여 Redis 캐시를 최신 상태로 업데이트합니다.
-      // 9초 대기를 유발하는 _loadAllPosts 호출을 제거합니다.
-      // 대신, 백엔드에서 비동기로 캐시 갱신이 진행되었다고 가정합니다.
+      // ===== [디버깅 로그] =====
+      print("--- [DEBUG] setState() 호출 완료. ---");
+      print("갱신 후 _allPostsForFiltering 갯수: ${_allPostsForFiltering.length}");
+      print("새 게시글 ID: ${newPostDto.id}, 제목/내용: [${newPostDto.ratingTag ?? 'N/A'}]");
+      print("---------------------------------------");
       
-      // 4. 측정 종료 및 시간 계산 (9초 대기 시간 회피 성공)
-      final endTime = DateTime.now();
-      final duration = endTime.difference(startTime).inMilliseconds;
-      
-      print("--- [UX METRIC] ----------------------------------------------------");
-      print("[순수 메인 화면 갱신 시간 - 최적화 후] ${duration} ms"); 
-      print("--------------------------------------------------------------------");
+      // ★ 추가: 게시글 작성 후 통계 리셋 및 로그
+      WidgetsBinding.instance.addPostFrameCallback((_) => _resetAndLogStatistics());
       
     } else if (newPostDto == true) { 
         // PostWriteScreen이 DTO 대신 true를 반환하는 경우 (오래된 방식)
         // 이 경로는 현재 로직상 DB 재호출이 발생해야 합니다.
+        print("--- [DEBUG] true 반환 (구식 경로) -> DB 재호출 시작 ---");
         await _loadRecommendedPosts(isInitialLoad: true); 
         await _loadAllPosts();
+        print("--- [DEBUG] DB 재호출 완료 ---");
+        // ★ 추가: DB 재호출 후 통계 리셋 및 로그
+        WidgetsBinding.instance.addPostFrameCallback((_) => _resetAndLogStatistics());
     }
   }
 
 
   @override
   Widget build(BuildContext context) {
-    // ★ 1. 초기 화면 로딩 시간 측정 로직
-    if (!_isInitialLoadLogged && !_isLoading) {
-      final endTime = DateTime.now().millisecondsSinceEpoch;
-      final duration = endTime - _initStartTime;
-      print("--- [UX METRIC] ----------------------------------------------------");
-      print("[초기 화면 로드 완료 시간 (Tag + Recommended)] ${duration} ms");
-      print("--------------------------------------------------------------------");
-      // 플래그를 설정하여 다시 로깅하지 않도록 방지
-      _isInitialLoadLogged = true; 
-    }
     
     final screenWidth = MediaQuery.of(context).size.width;
     final imageWidth = (screenWidth - 40) / 3;
@@ -487,6 +565,14 @@ class _MainPageScreenState extends State<MainPageScreen> {
                         }
                         
                         final post = _filteredPosts[index];
+
+                        // ********** [로딩 시간 측정 시작] **********
+                        final startTime = DateTime.now().microsecondsSinceEpoch;
+                        // ★ 원본 이미지로 테스트 중 (이전 요청 반영: post.imageUrl 만 사용)
+                        //final imageUrlToUse = post.imageUrl;
+                        final imageUrlToUse = post.thumbnailUrl ?? post.imageUrl; 
+                        // *******************************************************
+                        
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -503,10 +589,30 @@ class _MainPageScreenState extends State<MainPageScreen> {
                             height: imageHeight,
                             color: Colors.white,
                             child: CachedNetworkImage(
-                              imageUrl: post.thumbnailUrl ?? post.imageUrl,
+                              imageUrl: imageUrlToUse, // 위에서 결정된 URL 사용
                               fit: BoxFit.fitWidth,
                               placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                               errorWidget: (context, url, error) => const Icon(Icons.error),
+                              
+                              // ********** [로딩 완료 시점 측정 및 Map 저장] **********
+                              imageBuilder: (context, imageProvider) {
+                                  final endTime = DateTime.now().microsecondsSinceEpoch;
+                                  final duration = (endTime - startTime) ~/ 1000; // 정수 ms로 변환
+
+                                  // ★ 로딩 시간이 0 초과이고, Map에 해당 Post ID가 없는 경우에만 저장 (최초 로딩 시간만 기록)
+                                  if (duration > 0 && !_imageLoadTimesMap.containsKey(post.id)) {
+                                      _imageLoadTimesMap[post.id] = duration;
+                                      
+                                      // ★ 추가: 맵 크기가 50 이상이면 통계 출력 및 리셋
+                                      if (_imageLoadTimesMap.length >= 50) {
+                                          _resetAndLogStatistics(); 
+                                      }
+                                  }
+
+                                  // 실제 이미지를 표시
+                                  return Image(image: imageProvider, fit: BoxFit.fitWidth);
+                              },
+                              // *******************************************************
                             ),
                           ),
                         );
